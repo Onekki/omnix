@@ -48,7 +48,7 @@ exit
 bash "$HOME/.nixos/scripts/setup.sh"
 ```
 
-脚本默认交互式询问硬件文件来源、配置名，并在执行前要求确认。它从 `/etc/nixos/hardware-configuration.nix` 复制到仓库的 `hosts/desktop/`，以当前用户生成 `flake.lock`，再通过 sudo 执行 `nixos-rebuild switch --flake "path:$HOME/.nixos#desktop"`。脚本会临时启用 flakes；首次构建需要联网下载 nixpkgs unstable、Home Manager、DMS 及配套应用。`hardware-configuration.nix` 被 Git 忽略；构建使用 `path:` URL，以包含这份本机文件。以后应将生成的 `flake.lock` 纳入仓库，保持版本可重复。
+脚本默认交互式询问硬件文件来源、配置名，并在执行前要求确认。它从 `/etc/nixos/hardware-configuration.nix` 复制到仓库的 `hosts/desktop/`，以当前用户生成 `flake.lock`，再通过 sudo 执行 `nixos-rebuild switch --flake "path:$HOME/.nixos#desktop"`。脚本会临时启用 flakes，并在首次重建时优先使用清华 TUNA、中科大 USTC 的 Nix 二进制缓存，最后回退到官方缓存；系统切换后也会保持这个顺序。flake 中的 nixpkgs、Home Manager、DMS 等源码仍从其 GitHub 上游获取，缓存配置不改变源码下载地址。`hardware-configuration.nix` 被 Git 忽略；构建使用 `path:` URL，以包含这份本机文件。以后应将生成的 `flake.lock` 纳入仓库，保持版本可重复。
 
 `--source` 可指定其他硬件文件，`--profile` 可指定其他原生 NixOS 配置目录；旧参数 `--host` 也可使用。`--no-rebuild` 只复制硬件配置，`--non-interactive` 跳过交互提问。迁移后更新软件源可运行 `nix flake update "path:$HOME/.nixos"`，再执行 `nrs` 重建。`hosts/desktop` 只用于原生桌面；NixOS-WSL 需要单独的 `hosts/wsl` 和 WSL 专用模块。
 

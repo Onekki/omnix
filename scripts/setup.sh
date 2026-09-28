@@ -106,6 +106,8 @@ install -m 0644 -- "$source_file" "$target_file"
 printf 'Copied %s to %s\n' "$source_file" "$target_file"
 
 if [[ $rebuild == true ]]; then
-  NIX_CONFIG='experimental-features = nix-command flakes' nix flake lock "path:${repo_root}"
-  sudo env NIX_CONFIG='experimental-features = nix-command flakes' nixos-rebuild switch --flake "path:${repo_root}#${profile}"
+  substituters='https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirrors.ustc.edu.cn/nix-channels/store https://cache.nixos.org/'
+  nix_config=$(printf 'experimental-features = nix-command flakes\nsubstituters = %s\n' "$substituters")
+  NIX_CONFIG="$nix_config" nix flake lock "path:${repo_root}"
+  sudo env NIX_CONFIG="$nix_config" nixos-rebuild switch --flake "path:${repo_root}#${profile}"
 fi
