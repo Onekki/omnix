@@ -75,7 +75,7 @@ in
 
   environment.systemPackages = with pkgs; [
     adw-gtk3
-    fcitx5-configtool
+    qt6Packages.fcitx5-configtool
     firefox
     git
     kitty
