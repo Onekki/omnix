@@ -10,7 +10,6 @@
       cursor_shape = "beam";
     };
     extraConfig = ''
-      globinclude ${config.home.homeDirectory}/.config/kitty/dank-tabs.conf
       globinclude ${config.home.homeDirectory}/.config/kitty/dank-theme.conf
     '';
   };

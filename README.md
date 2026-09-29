@@ -58,7 +58,7 @@ Niri 常用键：`Super+Return` 终端、`Super+E` 文件、`Super+Space` DMS �
 
 DMS 使用上游主分支，与 nixpkgs unstable 一起通过 `flake.lock` 固定具体版本；更新锁文件时可能需要按新版模块调整配置。系统模块自动安装 Matugen、Cava、NetworkManager 集成和 Khal 等可选依赖。另外安装 `dgop` 供资源监控使用，启用 DankSearch (`dsearch`) 用户服务供启动器搜索文件，启用 DankCalendar (`dcal`) 用户服务。日历账户需在 DankCalendar 中自行添加；Khal 是 DMS 日历事件的另一种数据来源，未配置账户时不会自动出现事件。
 
-按 [应用主题文档](https://danklinux.com/docs/dankmaterialshell/application-themes) 安装了 `adw-gtk3`。在 DMS 设置的 **Theme & Colors** 中启用 **Apply GTK Themes**，GTK 应用便会使用 DMS 生成的配色；Qt 使用官方推荐的 GTK passthrough，会话环境同时提供给 systemd 用户服务和 Niri 启动的应用。Kitty 读取 DMS 生成的 `dank-tabs.conf` 与 `dank-theme.conf`；在 DMS 的 Theme / Apps 中保持 `Run DMS templates` 和 `kitty` 启用。已安装 Papirus 图标主题，可在 GTK/DMS 设置中选择。Fcitx5 和 Firefox 的完整动态外观不属于这些内置模板；Firefox 的浏览器界面还需按官方文档另行安装 Material Fox 或 Pywalfox。
+按 [应用主题文档](https://danklinux.com/docs/dankmaterialshell/application-themes) 安装了 `adw-gtk3`。在 DMS 设置的 **Theme & Colors** 中启用 **Apply GTK Themes**，GTK 应用便会使用 DMS 生成的配色；Qt 使用官方推荐的 GTK passthrough，会话环境同时提供给 systemd 用户服务和 Niri 启动的应用。Kitty 读取 DMS 生成的 `dank-theme.conf`，颜色会随 DMS 主题变化；DMS 内置的 `dank-tabs.conf` 含有当前 Kitty 不支持的 `tab_numbers_style`，因此暂不加载。请在 DMS 的 Theme / Apps 中保持 `Run DMS templates` 和 `kitty` 启用。已安装 Papirus 图标主题，可在 GTK/DMS 设置中选择。Fcitx5 和 Firefox 的完整动态外观不属于这些内置模板；Firefox 的浏览器界面还需按官方文档另行安装 Material Fox 或 Pywalfox。
 
 Niri 按 [DMS 合成器文档](https://danklinux.com/docs/dankmaterialshell/compositors#niri-configuration) 加载 DMS 生成的颜色、布局、Alt-Tab 和快捷键片段，也接入输出、光标、输入和窗口规则片段。`include optional=true` 允许首次登录时这些文件尚未生成；Niri 会监视它们并在文件出现后自动重载。首次进入图形会话时，`dms-niri-setup.service` 会在 DMS 启动前运行 `dms setup` 的单项命令，只为缺失的片段生成默认内容；已有文件由用户和 DMS 管理。布局使用透明背景，壁纸层会显示在概览中。DMS 已通过 systemd 用户服务启动，不需要在 Niri 中再次启动。
 
