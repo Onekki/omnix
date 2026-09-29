@@ -16,6 +16,7 @@
     prefer-no-csd
 
     environment {
+        LANG "zh_CN.UTF-8"
         QT_QPA_PLATFORM "wayland"
         QT_QPA_PLATFORMTHEME "gtk3"
         QT_QPA_PLATFORMTHEME_QT6 "gtk3"
