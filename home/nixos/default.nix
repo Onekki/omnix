@@ -1,7 +1,6 @@
 { userName, dmsPackage, ... }:
 {
   imports = [
-    ./activation.nix
     ./dms.nix
     ./fcitx5.nix
     ./fish.nix
