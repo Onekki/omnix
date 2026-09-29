@@ -1,4 +1,4 @@
-{ userName, ... }:
+{ userName, dmsPackage, ... }:
 {
   imports = [
     ./dms.nix
@@ -24,4 +24,14 @@
   };
 
   programs.home-manager.enable = true;
+
+  # Runs as this user during every `nrs` switch (home-manager activates under
+  # the target user), so failures abort the rebuild instead of hiding in a
+  # login-time service. Idempotent: both subcommands skip existing output.
+  home.activation.dmsSetup = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    export DMS_BIN=${lib.getExe dmsPackage}
+    export PATH=${lib.makeBinPath [ pkgs.bash pkgs.coreutils pkgs.jq pkgs.sudo pkgs.ghostty ]}:$PATH
+    bash ${../../scripts/dms.sh} niri-setup
+    bash ${../../scripts/dms.sh} theme-bootstrap
+  '';
 }

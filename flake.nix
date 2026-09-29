@@ -52,7 +52,7 @@
           dms-plugin-registry.nixosModules.default
           dankcalendar.nixosModules.default
           home-manager.nixosModules.home-manager
-          ({ pkgs, ... }: {
+          ({ pkgs, config, ... }: {
             networking.hostName = hostName;
             users.users.${userName} = {
               isNormalUser = true;
@@ -63,7 +63,10 @@
               useGlobalPkgs = true;
               useUserPackages = true;
               backupFileExtension = "hm-backup";
-              extraSpecialArgs = { inherit userName configurationName; };
+              extraSpecialArgs = {
+                inherit userName configurationName;
+                dmsPackage = config.programs.dank-material-shell.package;
+              };
               users.${userName} = import ./home/nixos;
             };
           })

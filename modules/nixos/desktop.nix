@@ -1,7 +1,4 @@
-{ config, lib, pkgs, userName, dgop, danksearch, ... }:
-let
-  dmsScript = ../../scripts/dms.sh;
-in
+{ pkgs, userName, dgop, danksearch, ... }:
 {
   hardware.graphics.enable = true;
 
@@ -32,29 +29,6 @@ in
   programs.dank-calendar = {
     enable = true;
     systemd.enable = true;
-  };
-
-  systemd.user.services.dms-niri-setup = {
-    description = "Initialize DMS Niri configuration";
-    before = [ "dms.service" ];
-    wantedBy = [ "graphical-session.target" ];
-    path = [ config.programs.niri.package pkgs.ghostty pkgs.coreutils pkgs.sudo ];
-    environment.DMS_BIN = lib.getExe config.programs.dank-material-shell.package;
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.bash}/bin/bash ${dmsScript} niri-setup";
-    };
-  };
-
-  systemd.user.services.dms-theme-bootstrap = {
-    description = "Generate Ghostty theme from current wallpaper";
-    wantedBy = [ "graphical-session.target" ];
-    path = [ pkgs.coreutils pkgs.jq ];
-    environment.DMS_BIN = lib.getExe config.programs.dank-material-shell.package;
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.bash}/bin/bash ${dmsScript} theme-bootstrap";
-    };
   };
 
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
