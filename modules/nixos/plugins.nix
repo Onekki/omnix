@@ -10,7 +10,7 @@
     inotify-tools
   ];
 
-  systemd.user.extraConfig = ''
-    DefaultEnvironment=PATH=/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin
-  '';
+  systemd.user.settings.Manager = {
+    DefaultEnvironment = "PATH=/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin";
+  };
 }
