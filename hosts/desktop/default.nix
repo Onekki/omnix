@@ -4,6 +4,8 @@
     ./hardware-configuration.nix
     ../../modules/nixos/base.nix
     ../../modules/nixos/desktop.nix
+    ../../modules/nixos/apps.nix
+    ../../modules/nixos/plugins.nix
     ../../modules/nixos/input-method.nix
   ];
 

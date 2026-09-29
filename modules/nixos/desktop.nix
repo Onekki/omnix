@@ -21,9 +21,6 @@ let
   '';
 in
 {
-  nixpkgs.config.allowUnfreePredicate = pkg:
-    builtins.elem (lib.getName pkg) [ "vscode" ];
-
   hardware.graphics.enable = true;
 
   services.displayManager = {
@@ -44,7 +41,6 @@ in
     enable = true;
     enableDynamicTheming = true;
     systemd.enable = true;
-    plugins.wallpaperBing.enable = true;
   };
   programs.dsearch = {
     enable = true;
@@ -77,12 +73,6 @@ in
   security.rtkit.enable = true;
   services.upower.enable = true;
 
-  # Make its plugin processes find curl/inotifywait etc. on NixOS, where the
-  # systemd user manager PATH doesn't include /run/current-system/sw/bin.
-  systemd.user.extraConfig = ''
-    DefaultEnvironment=PATH=/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin
-  '';
-
   fonts.packages = with pkgs; [
     noto-fonts
     noto-fonts-cjk-sans
@@ -97,14 +87,5 @@ in
 
   environment.systemPackages = with pkgs; [
     adw-gtk3
-    curl
-    firefox
-    git
-    inotify-tools
-    ghostty
-    nautilus
-    papirus-icon-theme
-    vscode
-    wl-clipboard
   ] ++ [ dgop.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 }

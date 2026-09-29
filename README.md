@@ -14,7 +14,9 @@
 │   └── hardware-configuration.nix # setup.sh 生成，Git 忽略
 ├── modules/nixos/
 │   ├── base.nix                    # 区域、网络等基础设置
-│   ├── desktop.nix                 # Niri、DMS、dsearch、DankCalendar 等
+│   ├── desktop.nix                 # Niri、DMS、greeter、dsearch、DankCalendar 等
+│   ├── apps.nix                    # Firefox、Ghostty、VS Code 等用户应用
+│   ├── plugins.nix                 # DMS 插件及其运行时依赖
 │   └── input-method.nix            # Fcitx5 + Rime
 └── home/nixos/
     ├── default.nix                 # Home Manager 入口
