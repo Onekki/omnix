@@ -27,7 +27,7 @@
   # the target user), so failures abort the rebuild instead of hiding in a
   # login-time service. First switch migrates from home-manager symlinks,
   # then DMS owns niri/ghostty config from then on.
-  home.activation.dmsSetup = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.dmsSetup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.sudo ]}:$PATH
     dms=${lib.getExe dmsPackage}
     config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}"
