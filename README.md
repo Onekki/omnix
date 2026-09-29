@@ -52,7 +52,7 @@ bash "$HOME/.nixos/scripts/setup.sh"
 
 `--source` 可指定其他硬件文件，`--profile` 可指定其他原生 NixOS 配置目录；旧参数 `--host` 也可使用。`--no-rebuild` 只复制硬件配置，`--non-interactive` 跳过交互提问。迁移后更新软件源可运行 `nix flake update "path:$HOME/.nixos"`，再执行 `nrs` 重建。`hosts/desktop` 只用于原生桌面；NixOS-WSL 需要单独的 `hosts/wsl` 和 WSL 专用模块。
 
-Niri 常用键：`Super+Return` 终端、`Super+E` 文件、`Super+Space` DMS 启动器、`Super+Q` 关闭窗口、`Super+Shift+E` 退出会话。除终端、文件管理器、浏览器和额外的工作区移动键外，快捷键由 DMS 生成的 `dms/binds.kdl` 管理；切换 DMS 配置后会同步更新。`Ctrl+Space` 切换中英文。Rime 用户词库在 `~/.local/share/fcitx5/rime`，重建系统不会清除；建议单独备份。
+Niri 常用键：`Super+Return` 终端、`Super+E` 文件、`Super+Space` DMS 启动器、`Super+Q` 关闭窗口、`Super+Shift+E` 退出会话。除终端、文件管理器、浏览器和额外的工作区移动键外，快捷键由 DMS 生成的 `dms/binds.kdl` 管理；切换 DMS 配置后会同步更新。`Ctrl+Space` 切换中英文。Rime 通过 `rime_ice_suggestion.yaml` 使用雾凇拼音的完整上游默认配置，首选方案为雾凇全拼，也保留 Ice 自带的其他方案。用户词库在 `~/.local/share/fcitx5/rime`，重建系统不会清除；建议单独备份。
 
 普通用户的默认登录 shell 是 Fish；Kitty 会直接启动 Fish，使用系统等宽字体回退显示中英文，并提供 10000 行滚动历史。Fish 提供 `ll`、`la` 和 `nrs` 别名；`nrs` 直接运行 `sudo nixos-rebuild switch --flake 'path:/home/admin/.nixos#desktop'`。配置分别位于 `home/nixos/kitty.nix` 和 `home/nixos/fish.nix`。
 
