@@ -21,6 +21,10 @@ in
       enable = true;
       compositor.name = "niri";
       configHome = "/home/${userName}";
+      logs = {
+        save = true;
+        path = "/var/lib/dms-greeter/greeter.log";
+      };
     };
   };
   programs.niri.enable = true;
