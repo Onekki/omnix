@@ -1,4 +1,4 @@
-{ dmsPackage, coreutils, sudo, ... }:
+{ dmsPackage, coreutils, sed, sudo, ... }:
 {
   xdg.configFile."environment.d/90-dms.conf".text = ''
     LANG=zh_CN.UTF-8
@@ -22,5 +22,9 @@
     if [ ! -f "$config_dir/niri/config.kdl" ]; then
       "$dms" setup headless --compositor niri --terminal ghostty --force </dev/null
     fi
+    # DMS's bundled ghostty config still sets background-blur-radius, an
+    # option removed from current ghostty; strip it so the terminal starts.
+    [ -f "$config_dir/ghostty/config" ] && \
+      sed -i '/^background-blur-radius/d' "$config_dir/ghostty/config"
   '';
 }
