@@ -95,10 +95,10 @@ if [[ $interactive == true ]]; then
   else
     printf 'Then skip rebuild (--no-rebuild).\n'
   fi
-  read -r -p 'Proceed? [y/N]: ' answer || exit 1
+  read -r -p 'Proceed? [Y/n]: ' answer || exit 1
   case "$answer" in
-    y|Y|yes|YES) ;;
-    *) printf 'Cancelled.\n'; exit 0 ;;
+    n|N|no|NO) printf 'Cancelled.\n'; exit 0 ;;
+    *) ;;
   esac
 fi
 
