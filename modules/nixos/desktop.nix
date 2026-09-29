@@ -2,8 +2,9 @@
 let
   dmsNiriSetup = pkgs.writeShellScript "dms-niri-setup" ''
     set -u
-    # systemd user services get a minimal PATH on NixOS; coreutils is needed for mkdir.
-    export PATH=${lib.makeBinPath [ config.programs.niri.package pkgs.kitty pkgs.coreutils ]}
+    # systemd user services get a minimal PATH on NixOS. DMS setup requires
+    # sudo on PATH (its setup commands run a privesc pre-check), plus coreutils.
+    export PATH=${lib.makeBinPath [ config.programs.niri.package pkgs.kitty pkgs.coreutils pkgs.sudo ]}
     dms_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/niri/dms"
     dms=${lib.getExe config.programs.dank-material-shell.package}
     mkdir -p "$dms_dir"

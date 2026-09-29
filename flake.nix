@@ -49,7 +49,7 @@
             networking.hostName = hostName;
             users.users.${userName} = {
               isNormalUser = true;
-              extraGroups = [ "wheel" "networkmanager" "video" ];
+              extraGroups = [ "wheel" "networkmanager" "video" "input" ];
               shell = pkgs.fish;
             };
             home-manager = {
