@@ -15,7 +15,7 @@
 ├── modules/nixos/
 │   ├── base.nix                    # 区域、网络等基础设置
 │   ├── desktop.nix                 # DMS、greeter、dsearch、DankCalendar 等
-│   ├── apps.nix                    # Microsoft Edge、Kitty、VS Code 等用户应用
+│   ├── apps.nix                    # Microsoft Edge、Foot、VS Code 等用户应用
 │   ├── plugins.nix                 # DMS 插件及其运行时依赖
 │   └── input-method.nix            # Fcitx5 + Rime
 └── home/nixos/
@@ -23,7 +23,7 @@
     ├── dms.nix                     # DMS、Qt、终端会话环境
     ├── fcitx5.nix                  # Fcitx5 autostart + 托盘图标（替换默认 Rime 图标）
     ├── fish.nix
-    ├── kitty.nix                   # Kitty：DMS 配色、Theme Sync 字体
+    ├── foot.nix                    # Foot：DMS 配色、Fira Code 和中文字体
     └── rime.nix                   # 生成 Rime default.custom.yaml
 ```
 
@@ -54,19 +54,19 @@ bash "$HOME/.nixos/scripts/setup.sh"
 
 `--source` 可指定其他硬件文件，`--profile` 可指定其他原生 NixOS 配置目录；旧参数 `--host` 也可使用。`--no-rebuild` 只复制硬件配置，`--non-interactive` 跳过交互提问。迁移后更新软件源可运行 `nix flake update "path:$HOME/.nixos"`，再执行 `nrs` 重建。`hosts/desktop` 只用于原生桌面；NixOS-WSL 需要单独的 `hosts/wsl` 和 WSL 专用模块。
 
-Niri 的全部快捷键由 DMS 生成的 `dms/binds.kdl` 管理：`Mod+T` 打开 Kitty 终端、`Mod+Space` 打开 DMS 启动器、`Mod+V` 剪贴板、`Mod+M` 任务管理器、`Mod+Comma` 设置、`Mod+Alt+L` 锁屏、`Mod+Shift+E` 退出、`Print`/`Ctrl+Print`/`Alt+Print` 截图，音量与亮度使用 `XF86*` 键并走 DMS 的 IPC，窗口、工作区和布局操作为 niri 默认键集。按 `Mod+Shift+/` 可显示按键帮助；`dms ipc` 可查看全部 IPC 命令。`Ctrl+Space` 切换中英文。Rime 通过 `rime_ice_suggestion.yaml` 使用雾凇拼音的完整上游默认配置，首选方案为雾凇全拼，也保留 Ice 自带的其他方案。用户词库在 `~/.local/share/fcitx5/rime`，重建系统不会清除；建议单独备份。
+Niri 的全部快捷键由 DMS 生成的 `dms/binds.kdl` 管理：`Mod+T` 打开 Foot 终端、`Mod+Space` 打开 DMS 启动器、`Mod+V` 剪贴板、`Mod+M` 任务管理器、`Mod+Comma` 设置、`Mod+Alt+L` 锁屏、`Mod+Shift+E` 退出、`Print`/`Ctrl+Print`/`Alt+Print` 截图，音量与亮度使用 `XF86*` 键并走 DMS 的 IPC，窗口、工作区和布局操作为 niri 默认键集。按 `Mod+Shift+/` 可显示按键帮助；`dms ipc` 可查看全部 IPC 命令。`Ctrl+Space` 切换中英文。Rime 通过 `rime_ice_suggestion.yaml` 使用雾凇拼音的完整上游默认配置，首选方案为雾凇全拼，也保留 Ice 自带的其他方案。用户词库在 `~/.local/share/fcitx5/rime`，重建系统不会清除；建议单独备份。
 
-普通用户的默认登录 shell 是 Fish；终端是 **Kitty**。`home/nixos/kitty.nix` 使用 Home Manager 声明，采用 DMS 默认的 12 像素内边距、隐藏窗口装饰和 Powerline 标签栏。通过独立的 `include` 指令加载 DMS 生成的 `kitty/dank-theme.conf`、`kitty/dank-tabs.conf`，以及插件生成的 `dms-theme-sync/kitty.conf`。配色跟随 DMS 的壁纸和主题；字体、字号由 Theme Sync 管理。没有硬编码配色，也没有额外的字体同步脚本。Fish 提供 `ll`、`la` 和 `nrs` 别名；`nrs` 运行 `sudo nixos-rebuild switch --flake 'path:/home/admin/.nixos#desktop'`。
+普通用户的默认登录 shell 是 Fish；默认终端是 **Foot**。外观在 `home/nixos/foot.nix` 中声明：英文使用 DMS 默认等宽字体 **Fira Code**，中文使用 **Noto Sans Mono CJK SC**，字号为 **12 pt**，四周留白 **12 像素**，使用闪烁细线光标，输入时隐藏鼠标。`dpi-aware=no` 让尺寸跟随 Wayland 输出缩放，避免额外按显示器 DPI 放大。字体包在桌面模块中安装。
 
-首次重建后重新登录，在 **DMS 设置 → Plugins** 中启用 **DMS Theme Sync**，进入其设置打开 **Synchronize terminal fonts**。插件要求 DMS ≥ 1.5，已通过官方插件 registry 的 NixOS 模块安装；NixOS 模块只安装源码，运行时开关保留在 DMS 的可写设置中。字体读取 DMS 的 **Monospace font**；字号在插件的 **Monospace font size** 中调整（默认 12 pt），并不跟随 DMS 的界面缩放。系统安装了默认等宽字体 Fira Code；选用其他字体时也需要安装对应字体包。插件生成文件后，新开 Kitty 或按 `Ctrl+Shift+F5` 重载配置。可运行 `dms ipc call dmsThemeSync status` 检查插件状态。
+配色直接 include DMS 生成的 `~/.config/foot/dank-colors.ini`，背景、文字、选区和光标颜色均由 DMS 管理。切换壁纸或主题后 DMS 会更新此文件；新开 Foot 可读取最新配色，不承诺已打开窗口会热更新。字体和字号是固定配置，不随 DMS 字体设置改变。Theme Sync 当前没有 Foot 字体输出，因此本配置移除了此前为 Kitty 添加的插件和相关接线。已有手动安装的同名插件需要在 DMS 设置里自行停用。
 
-迁移会将 DMS `binds.kdl` 中 `Mod+T` 原来启动 Foot/Ghostty 的命令改为 Kitty，并将原文件备份到 `binds.kdl.before-kitty`；已有其他自定义绑定保留。旧 Kitty 配置由 Home Manager 的 `hm-backup` 机制备份；若已有同名备份导致激活失败，先另存该备份再重建，不要直接删除配置目录。若 Kitty 仍出现黑屏或崩溃，需要在本机图形会话检查日志；更换配置并不证明此前的渲染问题已经解决。
+重建后 `Mod+T` 会从 Kitty/Ghostty 迁移为 Foot；原绑定文件保存到 `binds.kdl.before-foot`，其他自定义绑定保留。重新登录使会话的 `TERMINAL=foot` 生效。若 Home Manager 提示 `hm-backup` 同名备份已存在，先另存该备份再重建。Fish 提供 `ll`、`la` 和 `nrs` 别名；`nrs` 运行 `sudo nixos-rebuild switch --flake 'path:/home/admin/.nixos#desktop'`。Foot 使用 CPU 绘制终端内容，不依赖 Kitty/Ghostty 的 OpenGL 渲染路径，适合当前 VirtualBox 环境。
 
 DMS 使用上游主分支，与 nixpkgs unstable 一起通过 `flake.lock` 固定具体版本；更新锁文件时可能需要按新版模块调整配置。系统模块自动安装 Matugen、Cava、NetworkManager 集成和 Khal 等可选依赖。另外安装 `dgop` 供资源监控使用，启用 DankSearch (`dsearch`) 用户服务供启动器搜索文件，启用 DankCalendar (`dcal`) 用户服务。日历账户需在 DankCalendar 中自行添加；Khal 是 DMS 日历事件的另一种数据来源，未配置账户时不会自动出现事件。通过 `dms-plugin-registry` 启用了 Bing 每日壁纸插件（`wallpaperBing`），系统安装 `curl` 和 `inotify-tools` 供其使用，并为 systemd 用户服务补充默认 PATH（含 `/run/current-system/sw/bin`）。
 
-按 [应用主题文档](https://danklinux.com/docs/dankmaterialshell/application-themes) 安装了 `adw-gtk3`。在 DMS 设置的 **Theme & Colors** 中启用 **Apply GTK Themes**，GTK 应用便会使用 DMS 生成的配色；Qt 使用官方推荐的 GTK passthrough，会话环境同时提供给 systemd 用户服务和 Niri 启动的应用，Kitty 的 `dank-theme.conf` 也会随 DMS 切换自动适配。已安装 Papirus 图标主题，可在 GTK/DMS 设置中选择。默认浏览器是 Microsoft Edge（不属于 DMS 内置动态主题模板，浏览器界面如需跟随主题可另装扩展）；Visual Studio Code 已安装，可在扩展市场安装 "DMS - Dank Material Shell Theme"（或 `dms-theme.vsix`）使用与 DMS 主题联动的编辑器配色。
+按 [应用主题文档](https://danklinux.com/docs/dankmaterialshell/application-themes) 安装了 `adw-gtk3`。在 DMS 设置的 **Theme & Colors** 中启用 **Apply GTK Themes**，GTK 应用便会使用 DMS 生成的配色；Qt 使用官方推荐的 GTK passthrough，会话环境同时提供给 systemd 用户服务和 Niri 启动的应用，Foot 的 `dank-colors.ini` 也会随 DMS 切换自动适配。已安装 Papirus 图标主题，可在 GTK/DMS 设置中选择。默认浏览器是 Microsoft Edge（不属于 DMS 内置动态主题模板，浏览器界面如需跟随主题可另装扩展）；Visual Studio Code 已安装，可在扩展市场安装 "DMS - Dank Material Shell Theme"（或 `dms-theme.vsix`）使用与 DMS 主题联动的编辑器配色。
 
-Niri 的 `config.kdl` 由 DMS 全默认生成：home-manager 激活在配置缺失时执行一次 `dms setup headless --compositor niri --force`（首次迁移会先清理旧 home-manager 符号链接），缺失的 `binds.kdl` 会单独用 `dms setup binds` 补齐（自动检测终端，随后将旧默认终端绑定迁为 Kitty），按 [DMS 合成器文档](https://danklinux.com/docs/dankmaterialshell/compositors#niri-configuration) 加载 DMS 生成的 `colors`、`layout`、`alttab`、`binds` 片段（另有 `outputs`、`cursor`、`input`），含 `XDG_CURRENT_DESKTOP=niri` 环境变量；LANG 与 Qt GTK passthrough 等由 `environment.d` 提供给会话。切换 DMS 主题后 Matugen 会覆盖 `colors` 等片段与 Kitty 的 `dank-theme.conf`。布局使用透明背景，壁纸层会显示在概览中。DMS 已通过 systemd 用户服务启动，不需要在 Niri 中再次启动。
+Niri 的 `config.kdl` 由 DMS 全默认生成：home-manager 激活在配置缺失时执行一次 `dms setup headless --compositor niri --force`（首次迁移会先清理旧 home-manager 符号链接），缺失的 `binds.kdl` 会单独用 `dms setup binds` 补齐（自动检测终端，随后将旧默认终端绑定迁为 Foot），按 [DMS 合成器文档](https://danklinux.com/docs/dankmaterialshell/compositors#niri-configuration) 加载 DMS 生成的 `colors`、`layout`、`alttab`、`binds` 片段（另有 `outputs`、`cursor`、`input`），含 `XDG_CURRENT_DESKTOP=niri` 环境变量；LANG 与 Qt GTK passthrough 等由 `environment.d` 提供给会话。切换 DMS 主题后 Matugen 会覆盖 `colors` 等片段与 Foot 的 `dank-colors.ini`。布局使用透明背景，壁纸层会显示在概览中。DMS 已通过 systemd 用户服务启动，不需要在 Niri 中再次启动。
 
 NixOS 仍通过 `nixos-rebuild` 更新；[DMS 内置系统更新器](https://danklinux.com/docs/dankmaterialshell/cli-system-updater) 当前未列出 NixOS 后端。DMS 支持的应用、图标和动态模板可用 `dms doctor` 检查。
 
