@@ -9,6 +9,7 @@
 ├── flake.nix
 ├── .gitignore
 ├── scripts/setup.sh                # 复制硬件配置并重建当前 flake
+├── scripts/dms.sh                  # niri 片段部署 / Ghostty 主题引导（systemd 调用）
 ├── hosts/desktop/
 │   ├── default.nix                 # 这台机器的启动和硬件设置
 │   └── hardware-configuration.nix # setup.sh 生成，Git 忽略
@@ -71,7 +72,7 @@ NixOS 仍通过 `nixos-rebuild` 更新；[DMS 内置系统更新器](https://dan
 
 ## 检查
 
-运行 `setup.sh` 生成硬件文件后，可在有 Nix 的环境中运行 `nix flake check "path:$HOME/.nixos"`。登录后可运行 `dms doctor`、`systemctl --user status dms dms-niri-setup dsearch dcal` 和 `fcitx5-diagnose`，分别确认 DMS、配套服务和输入法。
+运行 `setup.sh` 生成硬件文件后，可在有 Nix 的环境中运行 `nix flake check "path:$HOME/.nixos"`。登录后可运行 `dms doctor`、`systemctl --user status dms dms-niri-setup dms-theme-bootstrap dsearch dcal` 和 `fcitx5-diagnose`，分别确认 DMS、配套服务和输入法。
 
 如果 Niri 里没有 DMS 快捷键，请按顺序检查：
 
