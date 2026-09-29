@@ -15,7 +15,7 @@
 ├── modules/nixos/
 │   ├── base.nix                    # 区域、网络等基础设置
 │   ├── desktop.nix                 # Niri、DMS、greeter、dsearch、DankCalendar 等
-│   ├── apps.nix                    # Firefox、Ghostty、VS Code 等用户应用
+│   ├── apps.nix                    # Microsoft Edge、Ghostty、VS Code 等用户应用
 │   ├── plugins.nix                 # DMS 插件及其运行时依赖
 │   └── input-method.nix            # Fcitx5 + Rime
 └── home/nixos/
@@ -60,7 +60,7 @@ Niri 的全部快捷键由 DMS 生成的 `dms/binds.kdl` 管理：`Mod+T` 打开
 
 DMS 使用上游主分支，与 nixpkgs unstable 一起通过 `flake.lock` 固定具体版本；更新锁文件时可能需要按新版模块调整配置。系统模块自动安装 Matugen、Cava、NetworkManager 集成和 Khal 等可选依赖。另外安装 `dgop` 供资源监控使用，启用 DankSearch (`dsearch`) 用户服务供启动器搜索文件，启用 DankCalendar (`dcal`) 用户服务。日历账户需在 DankCalendar 中自行添加；Khal 是 DMS 日历事件的另一种数据来源，未配置账户时不会自动出现事件。通过 `dms-plugin-registry` 启用了 Bing 每日壁纸插件（`wallpaperBing`），系统安装 `curl` 和 `inotify-tools` 供其使用，并为 systemd 用户服务补充默认 PATH（含 `/run/current-system/sw/bin`）。
 
-按 [应用主题文档](https://danklinux.com/docs/dankmaterialshell/application-themes) 安装了 `adw-gtk3`。在 DMS 设置的 **Theme & Colors** 中启用 **Apply GTK Themes**，GTK 应用便会使用 DMS 生成的配色；Qt 使用官方推荐的 GTK passthrough，会话环境同时提供给 systemd 用户服务和 Niri 启动的应用，Ghostty 的 `dankcolors` 主题也会随 DMS 切换自动适配。已安装 Papirus 图标主题，可在 GTK/DMS 设置中选择。默认浏览器是 Firefox，按 DMS 文档可搭配 Material Fox 或 Pywalfox 获得浏览器动态主题；Visual Studio Code 已安装，可在扩展市场安装 "DMS - Dank Material Shell Theme"（或 `dms-theme.vsix`）使用与 DMS 主题联动的编辑器配色。
+按 [应用主题文档](https://danklinux.com/docs/dankmaterialshell/application-themes) 安装了 `adw-gtk3`。在 DMS 设置的 **Theme & Colors** 中启用 **Apply GTK Themes**，GTK 应用便会使用 DMS 生成的配色；Qt 使用官方推荐的 GTK passthrough，会话环境同时提供给 systemd 用户服务和 Niri 启动的应用，Ghostty 的 `dankcolors` 主题也会随 DMS 切换自动适配。已安装 Papirus 图标主题，可在 GTK/DMS 设置中选择。默认浏览器是 Microsoft Edge（不属于 DMS 内置动态主题模板，浏览器界面如需跟随主题可另装扩展）；Visual Studio Code 已安装，可在扩展市场安装 "DMS - Dank Material Shell Theme"（或 `dms-theme.vsix`）使用与 DMS 主题联动的编辑器配色。
 
 Niri 按 [DMS 合成器文档](https://danklinux.com/docs/dankmaterialshell/compositors#niri-configuration) 加载 DMS 生成的 `colors`、`layout`、`alttab`、`binds` 片段，也接入 `outputs`、`cursor`、`input` 和 `windowrules` 片段；环境变量与 DMS 文档一致（含 `XDG_CURRENT_DESKTOP=niri` 和 Qt GTK passthrough）。`include optional=true` 允许首次登录时这些文件尚未生成；Niri 会监视它们并在文件出现后自动重载。首次进入图形会话时，`dms-niri-setup.service` 会在 DMS 启动前逐项运行 `dms setup`，只为缺失的片段生成默认内容；每个片段独立执行，单个失败不会中断其余片段，但任何失败都会让单元以失败状态退出，`systemctl --user status dms-niri-setup` 立即可见，dms 的报错直接进入 journal（`journalctl --user -u dms-niri-setup -b`），不做静默兜底。已有文件由用户和 DMS 管理，切换 DMS 主题后 Matugen 会覆盖 `colors` 等片段。布局使用透明背景，壁纸层会显示在概览中。DMS 已通过 systemd 用户服务启动，不需要在 Niri 中再次启动。
 

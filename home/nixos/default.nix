@@ -15,10 +15,10 @@
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
-      "text/html" = "firefox.desktop";
-      "application/xhtml+xml" = "firefox.desktop";
-      "x-scheme-handler/http" = "firefox.desktop";
-      "x-scheme-handler/https" = "firefox.desktop";
+      "text/html" = "microsoft-edge.desktop";
+      "application/xhtml+xml" = "microsoft-edge.desktop";
+      "x-scheme-handler/http" = "microsoft-edge.desktop";
+      "x-scheme-handler/https" = "microsoft-edge.desktop";
     };
   };
 

@@ -1,12 +1,12 @@
 { lib, pkgs, ... }:
 {
   nixpkgs.config.allowUnfreePredicate = pkg:
-    builtins.elem (lib.getName pkg) [ "vscode" ];
+    builtins.elem (lib.getName pkg) [ "microsoft-edge" "vscode" ];
 
   environment.systemPackages = with pkgs; [
-    firefox
     git
     ghostty
+    microsoft-edge
     nautilus
     papirus-icon-theme
     vscode
