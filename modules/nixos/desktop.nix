@@ -5,7 +5,7 @@ let
     export PATH=${lib.makeBinPath [ config.programs.niri.package pkgs.kitty ]}
     config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}"
 
-    for fragment in binds colors layout alttab outputs cursor windowrules; do
+    for fragment in binds colors layout alttab input outputs cursor windowrules; do
       if [ ! -e "$config_dir/niri/dms/$fragment.kdl" ]; then
         ${lib.getExe config.programs.dank-material-shell.package} setup "$fragment"
       fi
@@ -13,6 +13,9 @@ let
   '';
 in
 {
+  nixpkgs.config.allowUnfreePredicate = pkg:
+    builtins.elem (lib.getName pkg) [ "vscode" ];
+
   hardware.graphics.enable = true;
 
   services.displayManager = {
@@ -79,12 +82,12 @@ in
 
   environment.systemPackages = with pkgs; [
     adw-gtk3
-    qt6Packages.fcitx5-configtool
     firefox
     git
     kitty
     nautilus
     papirus-icon-theme
+    vscode
     wl-clipboard
   ] ++ [ dgop.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 }

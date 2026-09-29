@@ -1,4 +1,4 @@
-{ config, ... }:
+{ ... }:
 {
   programs.kitty = {
     enable = true;
@@ -10,7 +10,8 @@
       cursor_shape = "beam";
     };
     extraConfig = ''
-      globinclude ${config.home.homeDirectory}/.config/kitty/dank-theme.conf
+      include dank-tabs.conf
+      include dank-theme.conf
     '';
   };
 }

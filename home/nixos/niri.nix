@@ -17,6 +17,7 @@
 
     environment {
         LANG "zh_CN.UTF-8"
+        XDG_CURRENT_DESKTOP "niri"
         QT_QPA_PLATFORM "wayland"
         QT_QPA_PLATFORMTHEME "gtk3"
         QT_QPA_PLATFORMTHEME_QT6 "gtk3"
@@ -38,14 +39,6 @@
     }
 
     spawn-at-startup "fcitx5" "-d"
-
-    binds {
-        Mod+Return { spawn "kitty"; }
-        Mod+E { spawn "nautilus"; }
-        Mod+B { spawn "firefox"; }
-        Mod+Ctrl+Page_Up { move-column-to-workspace-up; }
-        Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
-    }
 
     include optional=true "dms/colors.kdl"
     include optional=true "dms/layout.kdl"
