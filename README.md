@@ -56,7 +56,7 @@ Niri 的全部快捷键由 DMS 生成的 `dms/binds.kdl` 管理：`Mod+T` 打开
 
 普通用户的默认登录 shell 是 Fish；Ghostty 是 DMS 的首选终端，配置里声明 `theme = "dankcolors"`，主题文件由 DMS 在切换壁纸或主题时生成到 `~/.config/ghostty/themes/dankcolors`；首次进入桌面后若提示主题不存在，在 DMS 设置的 Theme & Colors 中切换一次主题即可生成。纯 TTY 中直接运行 Ghostty 会因缺少图形会话（没有 `WAYLAND_DISPLAY`）而报错，属正常现象。终端底色由当前 DMS 主题的 Matugen 配色决定，偏黑是深色主题的正常表现，更换壁纸或主题即可改变。Fish 提供 `ll`、`la` 和 `nrs` 别名；`nrs` 直接运行 `sudo nixos-rebuild switch --flake 'path:/home/admin/.nixos#desktop'`。从 Kitty 迁移过来时，先删掉旧的按键文件让 `dms-niri-setup` 用 Ghostty 重新生成：`rm -f ~/.config/niri/dms/binds.kdl`，旧的 `~/.config/kitty` 目录可一并删除。
 
-DMS 使用上游主分支，与 nixpkgs unstable 一起通过 `flake.lock` 固定具体版本；更新锁文件时可能需要按新版模块调整配置。系统模块自动安装 Matugen、Cava、NetworkManager 集成和 Khal 等可选依赖。另外安装 `dgop` 供资源监控使用，启用 DankSearch (`dsearch`) 用户服务供启动器搜索文件，启用 DankCalendar (`dcal`) 用户服务。日历账户需在 DankCalendar 中自行添加；Khal 是 DMS 日历事件的另一种数据来源，未配置账户时不会自动出现事件。
+DMS 使用上游主分支，与 nixpkgs unstable 一起通过 `flake.lock` 固定具体版本；更新锁文件时可能需要按新版模块调整配置。系统模块自动安装 Matugen、Cava、NetworkManager 集成和 Khal 等可选依赖。另外安装 `dgop` 供资源监控使用，启用 DankSearch (`dsearch`) 用户服务供启动器搜索文件，启用 DankCalendar (`dcal`) 用户服务。日历账户需在 DankCalendar 中自行添加；Khal 是 DMS 日历事件的另一种数据来源，未配置账户时不会自动出现事件。通过 `dms-plugin-registry` 启用了 Bing 每日壁纸插件（`wallpaperBing`），系统安装 `curl` 和 `inotify-tools` 供其使用，并为 systemd 用户服务补充默认 PATH（含 `/run/current-system/sw/bin`）。
 
 按 [应用主题文档](https://danklinux.com/docs/dankmaterialshell/application-themes) 安装了 `adw-gtk3`。在 DMS 设置的 **Theme & Colors** 中启用 **Apply GTK Themes**，GTK 应用便会使用 DMS 生成的配色；Qt 使用官方推荐的 GTK passthrough，会话环境同时提供给 systemd 用户服务和 Niri 启动的应用，Ghostty 的 `dankcolors` 主题也会随 DMS 切换自动适配。已安装 Papirus 图标主题，可在 GTK/DMS 设置中选择。默认浏览器是 Firefox，按 DMS 文档可搭配 Material Fox 或 Pywalfox 获得浏览器动态主题；Visual Studio Code 已安装，可在扩展市场安装 "DMS - Dank Material Shell Theme"（或 `dms-theme.vsix`）使用与 DMS 主题联动的编辑器配色。
 

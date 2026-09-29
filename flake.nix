@@ -28,9 +28,15 @@
       url = "github:AvengeMedia/dankcalendar";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    dms-plugin-registry = {
+      url = "github:AvengeMedia/dms-plugin-registry";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, dms, dgop, danksearch, dankcalendar, ... }:
+  outputs =
+    { nixpkgs, home-manager, dms, dgop, danksearch, dankcalendar, dms-plugin-registry, ... }:
     let
       userName = "admin";
       hostName = "nixos";
@@ -43,6 +49,7 @@
         modules = [
           ./hosts/desktop
           dms.nixosModules.default
+          dms-plugin-registry.nixosModules.default
           dankcalendar.nixosModules.default
           home-manager.nixosModules.home-manager
           ({ pkgs, ... }: {
