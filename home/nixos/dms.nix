@@ -1,4 +1,4 @@
-{ config, dmsPackage, ... }:
+{ dmsPackage, coreutils, sudo, ... }:
 {
   xdg.configFile."environment.d/90-dms.conf".text = ''
     LANG=zh_CN.UTF-8
@@ -13,8 +13,8 @@
   # the target user), so failures abort the rebuild instead of hiding in a
   # login-time service. First switch migrates from home-manager symlinks,
   # then DMS owns niri/ghostty config from then on.
-  home.activation.dmsSetup = config.lib.dag.entryAfter [ "writeBoundary" ] ''
-    export PATH=${pkgs.coreutils}/bin:${pkgs.sudo}/bin:$PATH
+  home.activation.dmsSetup = ''
+    export PATH=${coreutils}/bin:${sudo}/bin:$PATH
     dms=${dmsPackage}/bin/dms
     config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}"
     [ -L "$config_dir/niri/config.kdl" ] && rm -f "$config_dir/niri/config.kdl"
