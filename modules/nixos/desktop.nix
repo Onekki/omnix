@@ -1,28 +1,41 @@
 { config, lib, pkgs, userName, dgop, danksearch, ... }:
 let
-  ghosttyThemeDefault = pkgs.writeText "ghostty-dankcolors"
-    (builtins.readFile ../../assets/ghostty/dankcolors);
-
   dmsNiriSetup = pkgs.writeShellScript "dms-niri-setup" ''
     set -u
     # systemd user services get a minimal PATH on NixOS. DMS setup requires
     # sudo on PATH (its setup commands run a privesc pre-check), plus coreutils.
-    export PATH=${lib.makeBinPath [ config.programs.niri.package pkgs.ghostty pkgs.coreutils pkgs.sudo ]}
+    export PATH=${lib.makeBinPath [ config.programs.niri.package pkgs.ghostty pkgs.coreutils pkgs.jq pkgs.sudo ]}
     config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}"
+    cache_dir="''${XDG_CACHE_HOME:-$HOME/.cache}"
     dms_dir="$config_dir/niri/dms"
     dms=${lib.getExe config.programs.dank-material-shell.package}
     mkdir -p "$dms_dir"
 
-    # ghostty config declares `theme = dankcolors`, but Matugen only generates
-    # that file on the first theme switch. Seed DMS's default palette so the
-    # terminal starts before then; Matugen overwrites it on later switches.
+    failed=0
+
+    # ghostty declares `theme = dankcolors`, but DMS only generates that file
+    # when Matugen runs (wallpaper/theme changes). On a fresh install there is
+    # no such run yet, so replay the exact official DMS matugen call using the
+    # current wallpaper; later switches keep regenerating the same file.
     ghostty_theme="$config_dir/ghostty/themes/dankcolors"
     if [ ! -f "$ghostty_theme" ]; then
-      install -Dm0644 ${ghosttyThemeDefault} "$ghostty_theme"
-      printf 'dms-niri-setup: seeded ghostty dankcolors theme\n' >&2
+      wp=$(jq -r '(.wallpaperPath // .session.wallpaperPath // .settings.wallpaperPath // "") | sub("^file://"; "")' \
+        "$config_dir/DankMaterialShell/settings.json" 2>/dev/null || true)
+      if [ -n "$wp" ] && [ -f "$wp" ]; then
+        shell_dir="$(dirname "$(dirname "$dms")")/share/quickshell/dms"
+        if "$dms" matugen generate --state-dir "$cache_dir/DankMaterialShell" \
+          --shell-dir "$shell_dir" --config-dir "$config_dir" \
+          --kind image --value "$wp" --mode dark </dev/null >/dev/null 2>&1; then
+          printf 'dms-niri-setup: generated themes from current wallpaper\n' >&2
+        else
+          printf 'dms-niri-setup: ERROR generating themes from current wallpaper\n' >&2
+          failed=1
+        fi
+      else
+        printf 'dms-niri-setup: no wallpaper yet, skipping theme generation\n' >&2
+      fi
     fi
 
-    failed=0
     for fragment in binds colors layout alttab input outputs cursor windowrules; do
       [ -s "$dms_dir/$fragment.kdl" ] && continue
       if ! "$dms" setup "$fragment" </dev/null; then
