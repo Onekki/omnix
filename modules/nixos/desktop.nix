@@ -2,7 +2,9 @@
 let
   dmsNiriSetup = pkgs.writeShellScript "dms-niri-setup" ''
     set -u
-    export PATH=${lib.makeBinPath [ config.programs.niri.package pkgs.kitty ]}
+    # systemd user services get a minimal PATH on NixOS; coreutils is needed
+    # for mkdir/tail even though this is a user-facing oneshot.
+    export PATH=${lib.makeBinPath [ config.programs.niri.package pkgs.kitty pkgs.coreutils ]}
     config_dir="''${XDG_CONFIG_HOME:-$HOME/.config}"
     dms_dir="$config_dir/niri/dms"
     dms=${lib.getExe config.programs.dank-material-shell.package}
@@ -25,6 +27,7 @@ let
       else
         printf 'dms-niri-setup: ERROR: failed to deploy %s\n' "$fragment" >>"$log"
         printf 'dms-niri-setup: ERROR: failed to deploy %s\n' "$fragment" >&2
+        tail -n 20 "$log" >&2
         failed=1
       fi
     }
