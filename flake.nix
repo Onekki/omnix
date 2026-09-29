@@ -32,7 +32,7 @@
 
   outputs = { nixpkgs, home-manager, dms, dgop, danksearch, dankcalendar, ... }:
     let
-      userName = "onekki";
+      userName = "admin";
       hostName = "nixos";
       configurationName = "desktop";
       system = "x86_64-linux";

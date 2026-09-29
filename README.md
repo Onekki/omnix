@@ -1,6 +1,6 @@
 # NixOS + Niri + DMS + Rime
 
-适用于本机 Intel i5-12400 / UHD Graphics 730 的 x86_64 桌面配置模板。flake 配置名是 `desktop`，系统主机名是 `nixos`，用户名是 `onekki`；时区为 `Asia/Shanghai`，使用中文系统区域和英文键盘布局，英文区域也已生成。桌面登录使用 dms-greeter，Niri 会启动 Fcitx5，DMS 由 systemd 用户服务启动。Fcitx5 的键盘英语和雾凇拼音可用 `Ctrl+Space` 切换。DMS 的系统监控、文件搜索和日历组件也已纳入配置。
+适用于本机 Intel i5-12400 / UHD Graphics 730 的 x86_64 桌面配置模板。flake 配置名是 `desktop`，系统主机名是 `nixos`，用户名是 `admin`；时区为 `Asia/Shanghai`，使用中文系统区域和英文键盘布局，英文区域也已生成。桌面登录使用 dms-greeter，Niri 会启动 Fcitx5，DMS 由 systemd 用户服务启动。Fcitx5 的键盘英语和雾凇拼音可用 `Ctrl+Space` 切换。DMS 的系统监控、文件搜索和日历组件也已纳入配置。
 
 ## 目录
 
@@ -27,7 +27,7 @@
 
 ## 从 minimal 系统迁移
 
-先用[官方 NixOS 安装手册](https://nixos.org/manual/nixos/stable/#sec-installation)和官方 minimal ISO 按普通方式安装系统，使用生成的 `/etc/nixos/configuration.nix` 完成 `nixos-install`，然后重启进入刚安装的 minimal 系统。本仓库在重启后才使用，不参与安装介质中的安装步骤。安装时创建有 `wheel`/sudo 权限的普通用户，推荐用户名 `onekki`，并确保网络可用。
+先用[官方 NixOS 安装手册](https://nixos.org/manual/nixos/stable/#sec-installation)和官方 minimal ISO 按普通方式安装系统，使用生成的 `/etc/nixos/configuration.nix` 完成 `nixos-install`，然后重启进入刚安装的 minimal 系统。本仓库在重启后才使用，不参与安装介质中的安装步骤。安装时创建有 `wheel`/sudo 权限的普通用户 `admin`，并确保网络可用。
 
 以该普通用户登录后，把仓库 clone 到固定目录 `~/.nixos`。minimal 系统如果没有 Git，可以先进入临时环境：
 
@@ -39,7 +39,7 @@ exit
 
 运行脚本前先核对两处配置：
 
-- `flake.nix` 中 `userName = "onekki"` 必须对应要使用 DMS 桌面的实际登录用户；如安装时用了其他用户名，先改这里。`configurationName = "desktop"` 是 flake 配置名，`hostName = "nixos"` 是迁移后系统的网络主机名，两者不必相同。
+- `flake.nix` 中 `userName = "admin"` 必须对应要使用 DMS 桌面的实际登录用户；如安装时用了其他用户名，先改这里。`configurationName = "desktop"` 是 flake 配置名，`hostName = "nixos"` 是迁移后系统的网络主机名，两者不必相同。
 - 将原系统 `/etc/nixos/configuration.nix` 中的 `system.stateVersion` 原值写入 `~/.nixos/hosts/desktop/default.nix`。不要因为迁移到 unstable 而提高它。该文件目前假定 UEFI 启动、ESP 挂载到 `/boot`；若实际引导方式或挂载点不同，先按原系统的配置调整 bootloader 设置。硬件文件中的磁盘 UUID 会由本机文件复制，不需要手填。
 
 然后以普通用户执行：
@@ -54,7 +54,7 @@ bash "$HOME/.nixos/scripts/setup.sh"
 
 Niri 常用键：`Super+Return` 终端、`Super+E` 文件、`Super+Space` DMS 启动器、`Super+Q` 关闭窗口、`Super+Shift+E` 退出会话。除终端、文件管理器、浏览器和额外的工作区移动键外，快捷键由 DMS 生成的 `dms/binds.kdl` 管理；切换 DMS 配置后会同步更新。`Ctrl+Space` 切换中英文。Rime 用户词库在 `~/.local/share/fcitx5/rime`，重建系统不会清除；建议单独备份。
 
-普通用户的默认登录 shell 是 Fish；Kitty 会直接启动 Fish，使用系统等宽字体回退显示中英文，并提供 10000 行滚动历史。Fish 提供 `ll`、`la` 和 `nrs` 别名；`nrs` 直接运行 `sudo nixos-rebuild switch --flake 'path:/home/onekki/.nixos#desktop'`。配置分别位于 `home/nixos/kitty.nix` 和 `home/nixos/fish.nix`。
+普通用户的默认登录 shell 是 Fish；Kitty 会直接启动 Fish，使用系统等宽字体回退显示中英文，并提供 10000 行滚动历史。Fish 提供 `ll`、`la` 和 `nrs` 别名；`nrs` 直接运行 `sudo nixos-rebuild switch --flake 'path:/home/admin/.nixos#desktop'`。配置分别位于 `home/nixos/kitty.nix` 和 `home/nixos/fish.nix`。
 
 DMS 使用上游主分支，与 nixpkgs unstable 一起通过 `flake.lock` 固定具体版本；更新锁文件时可能需要按新版模块调整配置。系统模块自动安装 Matugen、Cava、NetworkManager 集成和 Khal 等可选依赖。另外安装 `dgop` 供资源监控使用，启用 DankSearch (`dsearch`) 用户服务供启动器搜索文件，启用 DankCalendar (`dcal`) 用户服务。日历账户需在 DankCalendar 中自行添加；Khal 是 DMS 日历事件的另一种数据来源，未配置账户时不会自动出现事件。
 
