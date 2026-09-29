@@ -1,6 +1,6 @@
 # NixOS + Niri + DMS + Rime
 
-适用于本机 Intel i5-12400 / UHD Graphics 730 的 x86_64 桌面配置模板。flake 配置名是 `desktop`，系统主机名是 `nixos`，用户名是 `admin`；时区为 `Asia/Shanghai`，TTY 默认使用英文区域以避免中文显示为方块，Niri 启动的图形应用使用中文区域和英文键盘布局。桌面登录使用 dms-greeter，Niri 会启动 Fcitx5，DMS 由 systemd 用户服务启动。Fcitx5 的键盘英语和雾凇拼音可用 `Ctrl+Space` 切换。DMS 的系统监控、文件搜索和日历组件也已纳入配置。
+适用于本机 Intel i5-12400 / UHD Graphics 730 的 x86_64 桌面配置模板。flake 配置名是 `desktop`，系统主机名是 `nixos`，用户名是 `admin`；时区为 `Asia/Shanghai`，TTY 默认使用英文区域以避免中文显示为方块，Niri 启动的图形应用使用中文区域和英文键盘布局。桌面登录使用 dms-greeter，Niri 会启动 Fcitx5，DMS 由 systemd 用户服务启动。Fcitx5 的键盘英语和雾凇拼音可用 `Ctrl+Space` 切换，托盘图标换成干净的矢量"中"/"A"图标，候选窗使用 Material 主题。DMS 的系统监控、文件搜索和日历组件也已纳入配置。
 
 ## 目录
 
@@ -21,6 +21,7 @@
 └── home/nixos/
     ├── default.nix                 # Home Manager 入口
     ├── dms.nix                     # DMS、Qt、终端会话环境
+    ├── fcitx5.nix                  # Fcitx5 托盘图标（替换默认 Rime 图标）
     ├── fish.nix
     ├── ghostty.nix
     ├── niri.nix                   # 生成 niri/config.kdl

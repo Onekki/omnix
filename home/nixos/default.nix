@@ -2,6 +2,7 @@
 {
   imports = [
     ./dms.nix
+    ./fcitx5.nix
     ./fish.nix
     ./ghostty.nix
     ./niri.nix

@@ -7,8 +7,12 @@
       waylandFrontend = true;
       addons = with pkgs; [
         fcitx5-gtk
+        fcitx5-material-color
         (fcitx5-rime.override { rimeDataPkgs = [ rime-ice ]; })
       ];
+      settings.globalOptions.Interface = {
+        Theme = "Material-Color-deepPurple";
+      };
       settings.inputMethod = {
         "Groups/0" = {
           Name = "Default";
