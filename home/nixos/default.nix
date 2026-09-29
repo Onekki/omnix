@@ -3,7 +3,7 @@
   imports = [
     ./dms.nix
     ./fish.nix
-    ./kitty.nix
+    ./ghostty.nix
     ./niri.nix
     ./rime.nix
   ];
