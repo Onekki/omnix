@@ -4,7 +4,7 @@
     ./dms.nix
     ./fcitx5.nix
     ./fish.nix
-    ./foot.nix
+    ./kitty.nix
     ./rime.nix
   ];
 

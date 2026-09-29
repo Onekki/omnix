@@ -66,7 +66,6 @@
               extraSpecialArgs = {
                 inherit userName configurationName;
                 dmsPackage = config.programs.dank-material-shell.package;
-                inherit (pkgs) coreutils foot sudo;
               };
               users.${userName} = import ./home/nixos;
             };

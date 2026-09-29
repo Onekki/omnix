@@ -5,7 +5,7 @@
 
   environment.systemPackages = with pkgs; [
     git
-    foot
+    kitty
     microsoft-edge
     nautilus
     papirus-icon-theme
