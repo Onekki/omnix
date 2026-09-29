@@ -1,6 +1,6 @@
 # NixOS + Niri + DMS + Rime
 
-适用于本机 Intel i5-12400 / UHD Graphics 730 的 x86_64 桌面配置模板。flake 配置名是 `desktop`，系统主机名是 `nixos`，用户名是 `admin`；时区为 `Asia/Shanghai`，TTY 默认使用英文区域以避免中文显示为方块，Niri 启动的图形应用使用中文区域和英文键盘布局。桌面登录使用 dms-greeter，Niri 会启动 Fcitx5，DMS 由 systemd 用户服务启动。Fcitx5 的键盘英语和雾凇拼音可用 `Ctrl+Space` 切换，托盘图标换成干净的矢量"中"/"A"图标，候选窗使用 Material 主题。DMS 的系统监控、文件搜索和日历组件也已纳入配置。
+适用于本机 Intel i5-12400 / UHD Graphics 730 的 x86_64 桌面配置模板。flake 配置名是 `desktop`，系统主机名是 `nixos`，用户名是 `admin`；时区为 `Asia/Shanghai`，TTY 默认使用英文区域以避免中文显示为方块，Niri 启动的图形应用使用中文区域和英文键盘布局。桌面登录使用 dms-greeter，Fcitx5 通过 XDG autostart 启动，DMS 由 systemd 用户服务启动。Fcitx5 的键盘英语和雾凇拼音可用 `Ctrl+Space` 切换，托盘图标换成干净的矢量"中"/"A"图标，候选窗使用 Material 主题。DMS 的系统监控、文件搜索和日历组件也已纳入配置。
 
 ## 目录
 
@@ -9,23 +9,21 @@
 ├── flake.nix
 ├── .gitignore
 ├── scripts/setup.sh                # 复制硬件配置并重建当前 flake
-├── scripts/dms.sh                  # niri 片段部署 / Ghostty 主题引导（home-manager 激活调用）
+├── scripts/dms.sh                  # 首次用 dms setup 全默认初始化 niri/Ghostty（home-manager 激活调用）
 ├── hosts/desktop/
 │   ├── default.nix                 # 这台机器的启动和硬件设置
 │   └── hardware-configuration.nix # setup.sh 生成，Git 忽略
 ├── modules/nixos/
 │   ├── base.nix                    # 区域、网络等基础设置
-│   ├── desktop.nix                 # Niri、DMS、greeter、dsearch、DankCalendar 等
-│   ├── apps.nix                    # Microsoft Edge、Ghostty、VS Code 等用户应用
+│   ├── desktop.nix                 # DMS、greeter、dsearch、DankCalendar 等
+│   ├── apps.nix                    # Microsoft Edge、VS Code 等用户应用
 │   ├── plugins.nix                 # DMS 插件及其运行时依赖
 │   └── input-method.nix            # Fcitx5 + Rime
 └── home/nixos/
     ├── default.nix                 # Home Manager 入口
     ├── dms.nix                     # DMS、Qt、终端会话环境
-    ├── fcitx5.nix                  # Fcitx5 托盘图标（替换默认 Rime 图标）
+    ├── fcitx5.nix                  # Fcitx5 autostart + 托盘图标（替换默认 Rime 图标）
     ├── fish.nix
-    ├── ghostty.nix
-    ├── niri.nix                   # 生成 niri/config.kdl
     └── rime.nix                   # 生成 Rime default.custom.yaml
 ```
 
@@ -58,13 +56,13 @@ bash "$HOME/.nixos/scripts/setup.sh"
 
 Niri 的全部快捷键由 DMS 生成的 `dms/binds.kdl` 管理：`Mod+T` 打开 Ghostty 终端、`Mod+Space` 打开 DMS 启动器、`Mod+V` 剪贴板、`Mod+M` 任务管理器、`Mod+Comma` 设置、`Mod+Alt+L` 锁屏、`Mod+Shift+E` 退出、`Print`/`Ctrl+Print`/`Alt+Print` 截图，音量与亮度使用 `XF86*` 键并走 DMS 的 IPC，窗口、工作区和布局操作为 niri 默认键集。按 `Mod+Shift+/` 可显示按键帮助；`dms ipc` 可查看全部 IPC 命令。`Ctrl+Space` 切换中英文。Rime 通过 `rime_ice_suggestion.yaml` 使用雾凇拼音的完整上游默认配置，首选方案为雾凇全拼，也保留 Ice 自带的其他方案。用户词库在 `~/.local/share/fcitx5/rime`，重建系统不会清除；建议单独备份。
 
-普通用户的默认登录 shell 是 Fish；Ghostty 是 DMS 的首选终端，配置里声明 `theme = "dankcolors"`，主题文件由 DMS 在切换壁纸或主题时生成到 `~/.config/ghostty/themes/dankcolors`。该文件缺失时（比如全新安装还没切过主题），home-manager 切换会读取当前壁纸并执行 DMS 官方同款 `dms matugen generate` 命令动态生成（不用任何写死的颜色）；之后换壁纸、换主题时 Matugen 都会按官方流程覆盖同一文件。纯 TTY 中直接运行 Ghostty 会因缺少图形会话（没有 `WAYLAND_DISPLAY`）而报错，属正常现象。终端底色由当前 DMS 主题的 Matugen 配色决定，偏黑是深色主题的正常表现，更换壁纸或主题即可改变。Fish 提供 `ll`、`la` 和 `nrs` 别名；`nrs` 直接运行 `sudo nixos-rebuild switch --flake 'path:/home/admin/.nixos#desktop'`。从 Kitty 迁移过来时，先删掉旧的按键文件下个切换用 Ghostty 重新生成：`rm -f ~/.config/niri/dms/binds.kdl`，旧的 `~/.config/kitty` 目录可一并删除。
+普通用户的默认登录 shell 是 Fish；Ghostty 是 DMS 的首选终端，其配置由首次 `dms setup headless --compositor niri --terminal ghostty --force` 全默认生成（`theme = dankcolors`），主题文件随后由 DMS 在切换壁纸或主题时生成到 `~/.config/ghostty/themes/dankcolors`，换壁纸、换主题时 Matugen 都会按官方流程覆盖。纯 TTY 中直接运行 Ghostty 会因缺少图形会话（没有 `WAYLAND_DISPLAY`）而报错，属正常现象。终端底色由当前 DMS 主题的 Matugen 配色决定，偏黑是深色主题的正常表现，更换壁纸或主题即可改变。Fish 提供 `ll`、`la` 和 `nrs` 别名；`nrs` 直接运行 `sudo nixos-rebuild switch --flake 'path:/home/admin/.nixos#desktop'`。从 Kitty 迁移过来时，旧的 `~/.config/kitty` 目录可一并删除。
 
 DMS 使用上游主分支，与 nixpkgs unstable 一起通过 `flake.lock` 固定具体版本；更新锁文件时可能需要按新版模块调整配置。系统模块自动安装 Matugen、Cava、NetworkManager 集成和 Khal 等可选依赖。另外安装 `dgop` 供资源监控使用，启用 DankSearch (`dsearch`) 用户服务供启动器搜索文件，启用 DankCalendar (`dcal`) 用户服务。日历账户需在 DankCalendar 中自行添加；Khal 是 DMS 日历事件的另一种数据来源，未配置账户时不会自动出现事件。通过 `dms-plugin-registry` 启用了 Bing 每日壁纸插件（`wallpaperBing`），系统安装 `curl` 和 `inotify-tools` 供其使用，并为 systemd 用户服务补充默认 PATH（含 `/run/current-system/sw/bin`）。
 
 按 [应用主题文档](https://danklinux.com/docs/dankmaterialshell/application-themes) 安装了 `adw-gtk3`。在 DMS 设置的 **Theme & Colors** 中启用 **Apply GTK Themes**，GTK 应用便会使用 DMS 生成的配色；Qt 使用官方推荐的 GTK passthrough，会话环境同时提供给 systemd 用户服务和 Niri 启动的应用，Ghostty 的 `dankcolors` 主题也会随 DMS 切换自动适配。已安装 Papirus 图标主题，可在 GTK/DMS 设置中选择。默认浏览器是 Microsoft Edge（不属于 DMS 内置动态主题模板，浏览器界面如需跟随主题可另装扩展）；Visual Studio Code 已安装，可在扩展市场安装 "DMS - Dank Material Shell Theme"（或 `dms-theme.vsix`）使用与 DMS 主题联动的编辑器配色。
 
-Niri 按 [DMS 合成器文档](https://danklinux.com/docs/dankmaterialshell/compositors#niri-configuration) 加载 DMS 生成的 `colors`、`layout`、`alttab`、`binds` 片段，也接入 `outputs`、`cursor`、`input` 和 `windowrules` 片段；环境变量与 DMS 文档一致（含 `XDG_CURRENT_DESKTOP=niri` 和 Qt GTK passthrough）。`include optional=true` 允许首次登录时这些文件尚未生成；Niri 会监视它们并在文件出现后自动重载。`nrs`/home-manager 切换时会以当前用户逐项运行 `dms setup`（`scripts/dms.sh niri-setup`），只为缺失的片段生成默认内容；每个片段独立执行，任何失败都会让切换直接报错，不做静默兜底。已有文件由用户和 DMS 管理，切换 DMS 主题后 Matugen 会覆盖 `colors` 等片段。布局使用透明背景，壁纸层会显示在概览中。DMS 已通过 systemd 用户服务启动，不需要在 Niri 中再次启动。
+Niri 的 `config.kdl` 由 DMS 全默认生成（`scripts/dms.sh setup` 在 home-manager 激活时执行一次 `dms setup headless --compositor niri --terminal ghostty --force`），按 [DMS 合成器文档](https://danklinux.com/docs/dankmaterialshell/compositors#niri-configuration) 加载 DMS 生成的 `colors`、`layout`、`alttab`、`binds` 片段（另有 `outputs`、`cursor`、`input`），含 `XDG_CURRENT_DESKTOP=niri` 环境变量；LANG 与 Qt GTK passthrough 等由 `environment.d` 提供给会话。切换 DMS 主题后 Matugen 会覆盖 `colors` 等片段与 Ghostty 主题。布局使用透明背景，壁纸层会显示在概览中。DMS 已通过 systemd 用户服务启动，不需要在 Niri 中再次启动。
 
 NixOS 仍通过 `nixos-rebuild` 更新；[DMS 内置系统更新器](https://danklinux.com/docs/dankmaterialshell/cli-system-updater) 当前未列出 NixOS 后端。DMS 支持的应用、图标和动态模板可用 `dms doctor` 检查。
 
@@ -72,12 +70,12 @@ NixOS 仍通过 `nixos-rebuild` 更新；[DMS 内置系统更新器](https://dan
 
 ## 检查
 
-运行 `setup.sh` 生成硬件文件后，可在有 Nix 的环境中运行 `nix flake check "path:$HOME/.nixos"`。登录后可运行 `dms doctor`、`systemctl --user status dms dsearch dcal` 和 `fcitx5-diagnose`，分别确认 DMS、配套服务和输入法。片段与主题引导随每次 `nrs` 执行，也可手动重跑：`DMS_BIN=$(command -v dms) bash "$HOME/.nixos/scripts/dms.sh" niri-setup`。
+运行 `setup.sh` 生成硬件文件后，可在有 Nix 的环境中运行 `nix flake check "path:$HOME/.nixos"`。登录后可运行 `dms doctor`、`systemctl --user status dms dsearch dcal` 和 `fcitx5-diagnose`，分别确认 DMS、配套服务和输入法。niri/Ghostty 的首次初始化随 `nrs` 执行，也可手动重跑：`DMS_BIN=$(command -v dms) bash "$HOME/.nixos/scripts/dms.sh" setup`。
 
 如果 Niri 里没有 DMS 快捷键，请按顺序检查：
 
 ```bash
-DMS_BIN=$(command -v dms) bash "$HOME/.nixos/scripts/dms.sh" niri-setup
+DMS_BIN=$(command -v dms) bash "$HOME/.nixos/scripts/dms.sh" setup
 ls -la ~/.config/niri/dms/
 head -n 30 ~/.config/niri/dms/binds.kdl
 ```

@@ -3,46 +3,17 @@ set -u
 
 DMS_BIN=${DMS_BIN:?DMS_BIN not set}
 config_dir=${XDG_CONFIG_HOME:-$HOME/.config}
+niri_config="$config_dir/niri/config.kdl"
+ghostty_config="$config_dir/ghostty/config"
 
-setup_niri() {
-  dms_dir="$config_dir/niri/dms"
-  mkdir -p "$dms_dir"
+# Old home-manager generations left read-only store symlinks for these files;
+# DMS owns them now, so remove any symlink before letting DMS write.
+if [ -L "$niri_config" ] || [ -L "$ghostty_config" ]; then
+  printf 'dms-setup: removing home-manager config symlinks\n' >&2
+  rm -f "$niri_config" "$ghostty_config"
+fi
 
-  failed=0
-  for fragment in binds colors layout alttab input outputs cursor windowrules; do
-    [ -s "$dms_dir/$fragment.kdl" ] && continue
-    if ! "$DMS_BIN" setup "$fragment" </dev/null; then
-      printf 'dms-niri-setup: ERROR deploying %s\n' "$fragment" >&2
-      failed=1
-    fi
-  done
-  exit "$failed"
-}
-
-bootstrap_theme() {
-  cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}
-  ghostty_theme="$config_dir/ghostty/themes/dankcolors"
-  [ -f "$ghostty_theme" ] && exit 0
-
-  wp=$(jq -r '(.wallpaperPath // .session.wallpaperPath // .settings.wallpaperPath // "") | sub("^file://"; "")' \
-    "$config_dir/DankMaterialShell/settings.json" 2>/dev/null || true)
-  [ -n "$wp" ] && [ -f "$wp" ] || exit 0
-
-  shell_dir="$(dirname "$(dirname "$DMS_BIN")")/share/quickshell/dms"
-  exec "$DMS_BIN" matugen generate --state-dir "$cache_dir/DankMaterialShell" \
-    --shell-dir "$shell_dir" --config-dir "$config_dir" \
-    --kind image --value "$wp" --mode dark </dev/null >/dev/null 2>&1
-}
-
-case "${1:-}" in
-  niri-setup)
-    setup_niri
-    ;;
-  theme-bootstrap)
-    bootstrap_theme
-    ;;
-  *)
-    printf 'usage: %s niri-setup|theme-bootstrap\n' "$0" >&2
-    exit 2
-    ;;
-esac
+# One full default initialization: DMS deploys niri, fragments and ghostty.
+if [ ! -f "$niri_config" ]; then
+  exec "$DMS_BIN" setup headless --compositor niri --terminal ghostty --force </dev/null
+fi

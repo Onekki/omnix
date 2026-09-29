@@ -4,8 +4,6 @@
     ./dms.nix
     ./fcitx5.nix
     ./fish.nix
-    ./ghostty.nix
-    ./niri.nix
     ./rime.nix
   ];
 
@@ -30,8 +28,7 @@
   # login-time service. Idempotent: both subcommands skip existing output.
   home.activation.dmsSetup = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     export DMS_BIN=${lib.getExe dmsPackage}
-    export PATH=${lib.makeBinPath [ pkgs.bash pkgs.coreutils pkgs.jq pkgs.sudo pkgs.ghostty ]}:$PATH
-    bash ${../../scripts/dms.sh} niri-setup
-    bash ${../../scripts/dms.sh} theme-bootstrap
+    export PATH=${lib.makeBinPath [ pkgs.bash pkgs.coreutils pkgs.sudo ]}:$PATH
+    bash ${../../scripts/dms.sh} setup
   '';
 }
