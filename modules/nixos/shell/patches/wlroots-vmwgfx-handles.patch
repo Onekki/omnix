@@ -1,0 +1,95 @@
+From: omnix local compatibility patch
+Subject: [PATCH] drm: release vmwgfx PRIME surface handles with the surface ioctl
+
+VirtualBox VMSVGA uses vmwgfx. A PRIME-imported TTM surface is not a GEM
+handle, so GEM_CLOSE can fail with EINVAL even after a successful import.
+Use the vmwgfx surface-unref ioctl only for that driver and error. Preserve
+failure reporting if neither close operation succeeds. Cover both client
+buffer validation and KMS framebuffer cleanup.
+
+Adapted from the proposed vmwgfx fix (not yet merged into wlroots):
+https://github.com/hyprwm/Hyprland/issues/16175
+Related wlroots failure:
+https://github.com/labwc/labwc/issues/1829
+
+--- /dev/null
++++ b/include/util/drm_handle.h
+@@ -0,0 +1,40 @@
++#ifndef UTIL_DRM_HANDLE_H
++#define UTIL_DRM_HANDLE_H
++
++#include <errno.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <string.h>
++#include <vmwgfx_drm.h>
++#include <xf86drm.h>
++
++// vmwgfx can PRIME-import a surface as a TTM handle rather than a GEM handle.
++// Keep GEM errors fatal unless the vmwgfx surface-unref ioctl succeeds.
++static inline int close_dmabuf_handle(int fd, uint32_t handle) {
++	int ret = drmCloseBufferHandle(fd, handle);
++	if (ret == 0 || errno != EINVAL) {
++		return ret;
++	}
++
++	int saved_errno = errno;
++	drmVersionPtr version = drmGetVersion(fd);
++	if (version == NULL) {
++		errno = saved_errno;
++		return ret;
++	}
++	bool is_vmwgfx = version->name != NULL &&
++		version->name_len == 6 && memcmp(version->name, "vmwgfx", 6) == 0;
++	drmFreeVersion(version);
++	if (!is_vmwgfx) {
++		errno = saved_errno;
++		return ret;
++	}
++
++	struct drm_vmw_surface_arg arg = {
++		.sid = (int32_t)handle,
++		.handle_type = DRM_VMW_HANDLE_LEGACY,
++	};
++	return drmCommandWrite(fd, DRM_VMW_UNREF_SURFACE, &arg, sizeof(arg));
++}
++
++#endif
+--- a/types/wlr_linux_dmabuf_v1.c
++++ b/types/wlr_linux_dmabuf_v1.c
+@@ -13,6 +13,7 @@
+ #include <wlr/types/wlr_output_layer.h>
+ #include <wlr/util/log.h>
+ #include <xf86drm.h>
++#include "util/drm_handle.h"
+ #include "linux-dmabuf-v1-protocol.h"
+ #include "render/drm_format_set.h"
+ #include "util/shm.h"
+@@ -219,7 +220,7 @@
+ 			wlr_log_errno(WLR_ERROR, "Failed to import DMA-BUF FD for plane %d", i);
+ 			return false;
+ 		}
+-		if (drmCloseBufferHandle(linux_dmabuf->main_device_fd, handle) != 0) {
++		if (close_dmabuf_handle(linux_dmabuf->main_device_fd, handle) != 0) {
+ 			wlr_log_errno(WLR_ERROR, "Failed to close buffer handle for plane %d", i);
+ 			return false;
+ 		}
+--- a/backend/drm/fb.c
++++ b/backend/drm/fb.c
+@@ -5,6 +5,7 @@
+ #include <wlr/util/addon.h>
+ #include <wlr/util/log.h>
+ #include <xf86drm.h>
++#include "util/drm_handle.h"
+ #include <xf86drmMode.h>
+ #include "backend/drm/drm.h"
+ #include "backend/drm/fb.h"
+@@ -103,7 +104,7 @@
+ 			continue;
+ 		}
+ 
+-		if (drmCloseBufferHandle(drm->fd, handles[i]) != 0) {
++		if (close_dmabuf_handle(drm->fd, handles[i]) != 0) {
+ 			wlr_log_errno(WLR_ERROR, "drmCloseBufferHandle failed");
+ 		}
+ 	}

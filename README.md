@@ -125,4 +125,18 @@ nix flake check "path:$HOME/.nixos"
 
 登录 DMS 后检查 `systemctl --user status dms dsearch dcal`、`dms doctor`；登录 Noctalia 后检查 `systemctl --user status noctalia`、`noctalia config validate`、`niri validate --config ~/.config/niri/noctalia-session.kdl`。登录界面问题用 `journalctl -u greetd -b`，输入法问题用 `fcitx5-diagnose`。
 
+### VirtualBox 中 Noctalia 登录界面黑屏
+
+本机日志显示 Noctalia Greeter 1.6.0 成功初始化 EGL 后，wlroots 0.20.2 报 `Failed to close buffer handle for plane 0: Invalid argument`，随后 Wayland 连接断开。VMSVGA 使用 vmwgfx；它导入的部分 DMA-BUF 是 TTM surface 句柄，通用的 `GEM_CLOSE` 无法释放。这与[上游报告](https://github.com/hyprwm/Hyprland/issues/16175)中的问题吻合。
+
+`shell/noctalia.nix` 仅覆盖 Noctalia Greeter 的 wlroots 依赖，应用 `patches/wlroots-vmwgfx-handles.patch`：只有 `GEM_CLOSE` 返回 `EINVAL` 且驱动确认为 vmwgfx 时，才调用 `DRM_VMW_UNREF_SURFACE`。客户端缓冲区校验和 framebuffer 清理共用这一处理；释放失败仍然报错。该补丁是根据上游提议移植的本地兼容修复，尚未合入 wlroots，不启用软件渲染。首次重建需要编译 wlroots 和 greeter；上游修复后应删除此覆盖。
+
+Noctalia 将自身日志写到单独的 syslog 标识，仅筛选 `-u greetd` 可能遗漏关键错误。查看当前启动：
+
+```sh
+sudo journalctl -b -t noctalia-greeter -t noctalia-greeter-compositor --no-pager -n 150
+```
+
+若无法切换 TTY，在 VirtualBox 软键盘中发送 `Ctrl+Alt+F3`。仍无法进入时，重启并按住空格打开 NixOS 启动菜单，选中系统按 `e`，在启动参数末尾临时追加 `systemd.unit=multi-user.target`，回车进入文字登录。此时用 `-b -1` 查看上一次黑屏启动的日志，再拉取修复并执行 `nrsn`，完成后重启。
+
 依赖通过 `flake.lock` 固定。Noctalia 与主系统共用 nixpkgs unstable；按官方说明，这种 follows 配置不保证命中 Noctalia Cachix，首次构建可能需要本地编译。虚拟机中是否能正常显示仍需实机验证；不会自动注入软件渲染环境变量掩盖显卡问题。
