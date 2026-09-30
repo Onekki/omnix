@@ -12,8 +12,5 @@ in
       nrsd = rebuild "desktop-dms";
       nrsn = rebuild "desktop-noctalia";
     };
-    interactiveShellInit = ''
-      set -g fish_greeting ""
-    '';
   };
 }
