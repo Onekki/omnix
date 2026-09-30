@@ -1,15 +1,11 @@
-{ lib, pkgs, dmsPackage, ... }:
+{ config, lib, pkgs, osConfig, ... }:
+let
+  dmsPackage = osConfig.programs.dank-material-shell.package;
+in
 {
-  xdg.configFile."environment.d/90-dms.conf".text = ''
-    LANG=zh_CN.UTF-8
-    TERMINAL=foot
-    QT_QPA_PLATFORM=wayland
-    QT_QPA_PLATFORMTHEME=gtk3
-    QT_QPA_PLATFORMTHEME_QT6=gtk3
-    ELECTRON_OZONE_PLATFORM_HINT=auto
-  '';
+  programs.foot.settings.main.include = "${config.xdg.configHome}/foot/dank-colors.ini";
 
-  # Runs as this user during every `nrs` switch (home-manager activates under
+  # Runs as this user during a DMS `nrs` switch (home-manager activates under
   # the target user), so failures abort the rebuild instead of hiding in a
   # login-time service. First switch migrates from home-manager symlinks,
   # then DMS owns niri config from then on.

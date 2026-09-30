@@ -1,85 +1,128 @@
-# NixOS + Niri + DMS + Rime
+# NixOS + Niri + DMS / Noctalia + Rime
 
-适用于本机 Intel i5-12400 / UHD Graphics 730 的 x86_64 桌面配置模板。flake 配置名是 `desktop`，系统主机名是 `nixos`，用户名是 `admin`；时区为 `Asia/Shanghai`，TTY 默认使用英文区域以避免中文显示为方块，Niri 启动的图形应用使用中文区域和英文键盘布局。桌面登录使用 dms-greeter，Fcitx5 通过 XDG autostart 启动，DMS 由 systemd 用户服务启动。Fcitx5 的键盘英语和雾凇拼音可用 `Ctrl+Space` 切换，托盘图标换成干净的矢量"中"/"A"图标，候选窗使用 Material 主题。DMS 的系统监控、文件搜索和日历组件也已纳入配置。
+基于 nixos-unstable 的 x86_64 桌面配置，支持在 **DMS + dms-greeter** 与 **Noctalia v5 + Noctalia Greeter** 之间切换。两者共用 Niri、Foot、Fish、Microsoft Edge、VS Code、Fcitx5 和雾凇拼音，以及同一份硬件配置。
 
-## 目录
+系统主机名默认为 `nixos`，用户名为 `admin`，仓库放在 `~/.nixos`。TTY 使用英文区域，图形应用使用中文区域；时区为 `Asia/Shanghai`。本机已确认 VirtualBox 中 Kitty 硬件渲染黑屏，因此使用 CPU 绘制终端内容的 Foot。
+
+## 切换桌面
+
+| 命令 | flake 配置 | 桌面和登录界面 |
+| --- | --- | --- |
+| `nrsd` | `desktop-dms` | DMS + dms-greeter |
+| `nrsn` | `desktop-noctalia` | Noctalia + Noctalia Greeter |
+| `nrs` | 当前配置 | 重建当前选择 |
+
+这些 Fish alias 都执行 `sudo nixos-rebuild switch --flake "path:$HOME/.nixos#…"`。**切换成功后重启**，使 greeter、Niri 和会话环境一起生效；greetd 的 NixOS 模块默认不会在 rebuild 时重启，以免中断正在使用的登录会话。不会自动重启电脑。
+
+旧的 `#desktop` 仍兼容，指向 `#desktop-dms`。它不是“当前桌面”的动态别名；日常保留当前选择请用 `nrs`。两个配置中的 `nrsd`、`nrsn` 始终都存在。
+
+如果还没有这些 alias，可先直接执行：
+
+```sh
+sudo nixos-rebuild switch --flake "path:$HOME/.nixos#desktop-noctalia"
+sudo reboot
+```
+
+本次新增了提交到仓库的 `flake.lock`。如果本地已有以前 `setup.sh` 生成但未跟踪的同名文件，先备份它再 `git pull`，避免 Git 拒绝覆盖：
+
+```sh
+mv --backup=numbered ~/.nixos/flake.lock ~/.nixos/flake.lock.local-backup
+```
+
+## 目录与抽象
 
 ```text
 .
-├── flake.nix
-├── .gitignore
-├── scripts/setup.sh                # 复制硬件配置并重建当前 flake
+├── flake.nix                       # 两个配置，共用 mkDesktop
+├── flake.lock                      # 固定依赖版本
+├── scripts/setup.sh                # 复制硬件文件，选择 shell，默认重建
 ├── hosts/desktop/
-│   ├── default.nix                 # 这台机器的启动和硬件设置
-│   └── hardware-configuration.nix # setup.sh 生成，Git 忽略
+│   ├── default.nix                 # 硬件、启动与功能入口
+│   └── hardware-configuration.nix  # 本机生成，Git 忽略
 ├── modules/nixos/
-│   ├── base.nix                    # 区域、网络等基础设置
-│   ├── desktop.nix                 # DMS、greeter、dsearch、DankCalendar 等
-│   ├── apps.nix                    # Microsoft Edge、Foot、VS Code 等用户应用
-│   ├── plugins.nix                 # DMS 插件及其运行时依赖
-│   └── input-method.nix            # Fcitx5 + Rime
+│   ├── base.nix                    # 区域、网络、Nix 缓存
+│   ├── desktop.nix                 # 公共 Niri、音频、字体、会话环境
+│   ├── apps.nix                    # 公共应用
+│   ├── shell/
+│   │   ├── default.nix             # 选择 dms 或 noctalia
+│   │   ├── dms.nix                 # DMS、dms-greeter、dsearch、dcal、dgop
+│   │   └── noctalia.nix            # Noctalia、Noctalia Greeter、推荐服务
+│   ├── input-method/
+│   │   ├── default.nix             # 输入法实现选择入口
+│   │   └── fcitx5.nix              # Fcitx5 + Rime Ice 的具体实现
+│   └── plugins/dms.nix             # DMS 插件及依赖，与 apps 分开
 └── home/nixos/
-    ├── default.nix                 # Home Manager 入口
-    ├── dms.nix                     # DMS、Qt、终端会话环境
-    ├── fcitx5.nix                  # Fcitx5 autostart + 托盘图标（替换默认 Rime 图标）
-    ├── fish.nix
-    ├── foot.nix                    # Foot：DMS 配色、Fira Code 和中文字体
-    └── rime.nix                   # 生成 Rime default.custom.yaml
+    ├── default.nix                 # 公共 Home Manager 入口
+    ├── session.nix                 # 中文图形环境、Foot、Qt 设置
+    ├── fish.nix                    # Fish 与 nrs/nrsd/nrsn
+    ├── foot.nix                    # 公共字体与外观，主题由 shell 提供
+    ├── shell/{default,dms,noctalia}.nix
+    ├── input-method/{default,fcitx5,rime}.nix
+    └── niri/noctalia.nix           # 独立的 Noctalia Niri 会话配置
 ```
 
-## 从 minimal 系统迁移
+`hosts/desktop` 只导入功能入口。`shell/default.nix` 只负责选择实现，每个实现同时管理 shell 和 greeter，不再分开选择 display-manager。`mkDesktop` 的 `shell` 仅支持 `dms`、`noctalia`；输入法通过独立的 `inputMethod` 参数选择，默认 `fcitx5`。未来新增输入法时，在系统和 Home Manager 的 `input-method/` 中添加实现并登记到 `default.nix`，无需改动 shell 模块。未知实现会直接报错。
 
-先用[官方 NixOS 安装手册](https://nixos.org/manual/nixos/stable/#sec-installation)和官方 minimal ISO 按普通方式安装系统，使用生成的 `/etc/nixos/configuration.nix` 完成 `nixos-install`，然后重启进入刚安装的 minimal 系统。本仓库在重启后才使用，不参与安装介质中的安装步骤。安装时创建有 `wheel`/sudo 权限的普通用户 `admin`，并确保网络可用。
+`hosts/desktop` 表示机器类别，DMS/Noctalia 是这台机器的两种桌面配置，因此不会重复创建硬件文件或 `hosts/dms`、`hosts/noctalia`。将来 NixOS-WSL 应添加独立的 `hosts/wsl`。
 
-以该普通用户登录后，把仓库 clone 到固定目录 `~/.nixos`。minimal 系统如果没有 Git，可以先进入临时环境：
+## 从官方 minimal 系统迁移
+
+先按[官方安装手册](https://nixos.org/manual/nixos/stable/#sec-installation)用 minimal ISO 安装 NixOS，创建有 wheel/sudo 权限的普通用户并重启。此仓库用于安装完成后的配置迁移。
 
 ```sh
 nix-shell -p git
-git clone '你的仓库 Git 地址' "$HOME/.nixos"
+git clone https://github.com/Onekki/omnix.git "$HOME/.nixos"
 exit
 ```
 
-运行脚本前先核对两处配置：
+运行前核对：
 
-- `flake.nix` 中 `userName = "admin"` 必须对应要使用 DMS 桌面的实际登录用户；如安装时用了其他用户名，先改这里。`configurationName = "desktop"` 是 flake 配置名，`hostName = "nixos"` 是迁移后系统的网络主机名，两者不必相同。
-- 将原系统 `/etc/nixos/configuration.nix` 中的 `system.stateVersion` 原值写入 `~/.nixos/hosts/desktop/default.nix`。不要因为迁移到 unstable 而提高它。该文件目前假定 UEFI 启动、ESP 挂载到 `/boot`；若实际引导方式或挂载点不同，先按原系统的配置调整 bootloader 设置。硬件文件中的磁盘 UUID 会由本机文件复制，不需要手填。
+- `flake.nix` 中的 `userName`、`hostName` 必须符合本机需求；默认用户为 `admin`。
+- `hosts/desktop/default.nix` 的 `system.stateVersion` 应保留原系统值，不随 unstable 升级。当前模板为 `26.05`。
+- 当前引导配置假定 UEFI、ESP 挂载在 `/boot`，其他安装方式需沿用原配置。
 
-然后以普通用户执行：
+以普通用户执行：
 
 ```sh
 bash "$HOME/.nixos/scripts/setup.sh"
 ```
 
-脚本默认交互式询问硬件文件来源、配置名，并在执行前要求确认。它从 `/etc/nixos/hardware-configuration.nix` 复制到仓库的 `hosts/desktop/`，以当前用户生成 `flake.lock`，再通过 sudo 执行 `nixos-rebuild switch --flake "path:$HOME/.nixos#desktop"`。普通用户生成锁文件时只临时启用 flakes；首次重建由 root 优先使用清华 TUNA、中科大 USTC 的 Nix 二进制缓存，最后回退到官方缓存，避免普通用户覆盖缓存设置时出现 `ignoring untrusted substituter` 警告。系统切换后也会保持这个缓存顺序。flake 中的 nixpkgs、Home Manager、DMS 等源码仍从其 GitHub 上游获取，缓存配置不改变源码下载地址。`hardware-configuration.nix` 被 Git 忽略；构建使用 `path:` URL，以包含这份本机文件。以后应将生成的 `flake.lock` 纳入仓库，保持版本可重复。
+脚本默认交互式询问硬件文件、主机 profile 和 shell（默认 `dms`），最后 `[Y/n]` 回车确认。硬件文件从 `/etc/nixos/hardware-configuration.nix` 复制到 `hosts/desktop/`，随后使用锁文件解析输入并重建 `#desktop-dms` 或 `#desktop-noctalia`。`path:` URL 确保构建能看到被 Git 忽略的本机硬件文件。完成后重启。
 
-`--source` 可指定其他硬件文件，`--profile` 可指定其他原生 NixOS 配置目录；旧参数 `--host` 也可使用。`--no-rebuild` 只复制硬件配置，`--non-interactive` 跳过交互提问。迁移后更新软件源可运行 `nix flake update "path:$HOME/.nixos"`，再执行 `nrs` 重建。`hosts/desktop` 只用于原生桌面；NixOS-WSL 需要单独的 `hosts/wsl` 和 WSL 专用模块。
+支持 `--shell noctalia`、`--source FILE`、`--profile desktop`（兼容 `--host`）、`--no-rebuild` 和 `--non-interactive`。`--profile` 是主机目录名，shell 通过 `--shell` 单独选择。例如：
 
-Niri 的全部快捷键由 DMS 生成的 `dms/binds.kdl` 管理：`Mod+T` 打开 Foot 终端、`Mod+Space` 打开 DMS 启动器、`Mod+V` 剪贴板、`Mod+M` 任务管理器、`Mod+Comma` 设置、`Mod+Alt+L` 锁屏、`Mod+Shift+E` 退出、`Print`/`Ctrl+Print`/`Alt+Print` 截图，音量与亮度使用 `XF86*` 键并走 DMS 的 IPC，窗口、工作区和布局操作为 niri 默认键集。按 `Mod+Shift+/` 可显示按键帮助；`dms ipc` 可查看全部 IPC 命令。`Ctrl+Space` 切换中英文。Rime 通过 `rime_ice_suggestion.yaml` 使用雾凇拼音的完整上游默认配置，首选方案为雾凇全拼，也保留 Ice 自带的其他方案。用户词库在 `~/.local/share/fcitx5/rime`，重建系统不会清除；建议单独备份。
-
-普通用户的默认登录 shell 是 Fish；默认终端是 **Foot**。外观在 `home/nixos/foot.nix` 中声明：英文使用 DMS 默认等宽字体 **Fira Code**，中文使用 **Noto Sans Mono CJK SC**，字号为 **12 pt**，四周留白 **12 像素**，使用闪烁细线光标，输入时隐藏鼠标。`dpi-aware=no` 让尺寸跟随 Wayland 输出缩放，避免额外按显示器 DPI 放大。字体包在桌面模块中安装。
-
-配色直接 include DMS 生成的 `~/.config/foot/dank-colors.ini`，背景、文字、选区和光标颜色均由 DMS 管理。切换壁纸或主题后 DMS 会更新此文件；新开 Foot 可读取最新配色，不承诺已打开窗口会热更新。字体和字号是固定配置，不随 DMS 字体设置改变。Theme Sync 当前没有 Foot 字体输出，因此本配置移除了此前为 Kitty 添加的插件和相关接线。已有手动安装的同名插件需要在 DMS 设置里自行停用。
-
-重建后 `Mod+T` 会从 Kitty/Ghostty 迁移为 Foot；原绑定文件保存到 `binds.kdl.before-foot`，其他自定义绑定保留。重新登录使会话的 `TERMINAL=foot` 生效。若 Home Manager 提示 `hm-backup` 同名备份已存在，先另存该备份再重建。Fish 提供 `ll`、`la` 和 `nrs` 别名；`nrs` 运行 `sudo nixos-rebuild switch --flake 'path:/home/admin/.nixos#desktop'`。Foot 使用 CPU 绘制终端内容，不依赖 Kitty/Ghostty 的 OpenGL 渲染路径，适合当前 VirtualBox 环境。
-
-DMS 使用上游主分支，与 nixpkgs unstable 一起通过 `flake.lock` 固定具体版本；更新锁文件时可能需要按新版模块调整配置。系统模块自动安装 Matugen、Cava、NetworkManager 集成和 Khal 等可选依赖。另外安装 `dgop` 供资源监控使用，启用 DankSearch (`dsearch`) 用户服务供启动器搜索文件，启用 DankCalendar (`dcal`) 用户服务。日历账户需在 DankCalendar 中自行添加；Khal 是 DMS 日历事件的另一种数据来源，未配置账户时不会自动出现事件。通过 `dms-plugin-registry` 启用了 Bing 每日壁纸插件（`wallpaperBing`），系统安装 `curl` 和 `inotify-tools` 供其使用，并为 systemd 用户服务补充默认 PATH（含 `/run/current-system/sw/bin`）。
-
-按 [应用主题文档](https://danklinux.com/docs/dankmaterialshell/application-themes) 安装了 `adw-gtk3`。在 DMS 设置的 **Theme & Colors** 中启用 **Apply GTK Themes**，GTK 应用便会使用 DMS 生成的配色；Qt 使用官方推荐的 GTK passthrough，会话环境同时提供给 systemd 用户服务和 Niri 启动的应用，Foot 的 `dank-colors.ini` 也会随 DMS 切换自动适配。已安装 Papirus 图标主题，可在 GTK/DMS 设置中选择。默认浏览器是 Microsoft Edge（不属于 DMS 内置动态主题模板，浏览器界面如需跟随主题可另装扩展）；Visual Studio Code 已安装，可在扩展市场安装 "DMS - Dank Material Shell Theme"（或 `dms-theme.vsix`）使用与 DMS 主题联动的编辑器配色。
-
-Niri 的 `config.kdl` 由 DMS 全默认生成：home-manager 激活在配置缺失时执行一次 `dms setup headless --compositor niri --force`（首次迁移会先清理旧 home-manager 符号链接），缺失的 `binds.kdl` 会单独用 `dms setup binds` 补齐（自动检测终端，随后将旧默认终端绑定迁为 Foot），按 [DMS 合成器文档](https://danklinux.com/docs/dankmaterialshell/compositors#niri-configuration) 加载 DMS 生成的 `colors`、`layout`、`alttab`、`binds` 片段（另有 `outputs`、`cursor`、`input`），含 `XDG_CURRENT_DESKTOP=niri` 环境变量；LANG 与 Qt GTK passthrough 等由 `environment.d` 提供给会话。切换 DMS 主题后 Matugen 会覆盖 `colors` 等片段与 Foot 的 `dank-colors.ini`。布局使用透明背景，壁纸层会显示在概览中。DMS 已通过 systemd 用户服务启动，不需要在 Niri 中再次启动。
-
-NixOS 仍通过 `nixos-rebuild` 更新；[DMS 内置系统更新器](https://danklinux.com/docs/dankmaterialshell/cli-system-updater) 当前未列出 NixOS 后端。DMS 支持的应用、图标和动态模板可用 `dms doctor` 检查。
-
-登录界面按 [DMS 的 NixOS 文档](https://danklinux.com/docs/dankgreeter/nixos) 使用 nixpkgs 自带的 dms-greeter 模块，Niri 是登录界面的合成器。`configHome` 指向当前用户目录，greeter 启动时会复制该用户已有的 DMS 设置、配色和壁纸状态；首次登录前尚无用户主题可同步。
-
-## 检查
-
-运行 `setup.sh` 生成硬件文件后，可在有 Nix 的环境中运行 `nix flake check "path:$HOME/.nixos"`。登录后可运行 `dms doctor`、`systemctl --user status dms dsearch dcal` 和 `fcitx5-diagnose`，分别确认 DMS、配套服务和输入法。niri 的首次初始化与按键补齐随 `nrs` 执行，也可手动重跑：`dms setup headless --compositor niri --force` 和 `dms setup binds`。
-
-如果 Niri 里没有 DMS 快捷键，请按顺序检查：
-
-```bash
-dms setup headless --compositor niri --force
-ls -la ~/.config/niri/dms/
-head -n 30 ~/.config/niri/dms/binds.kdl
+```sh
+bash ~/.nixos/scripts/setup.sh --shell noctalia
 ```
+
+Nix 二进制缓存优先使用 TUNA、USTC，再使用官方缓存；flake 源码仍来自各项目 GitHub。更新软件源运行 `nix flake update "path:$HOME/.nixos"`，再运行 `nrs`。
+
+## 两套 shell 的配置边界
+
+DMS 使用官方 NixOS 模块、dms-greeter、DankSearch、DankCalendar 和 dgop。Bing 壁纸插件通过官方 registry 安装，在 DMS 设置里启用并配置每日更新。DMS 的 Niri 配置保留为可写的 `~/.config/niri/config.kdl`，首次激活通过官方 `dms setup` 初始化。`Mod+T` 的旧终端命令会迁为 Foot，修改前备份 `binds.kdl`。
+
+Noctalia 使用[官方 v5 NixOS 和 Home Manager 模块](https://docs.noctalia.dev/noctalia/getting-started/nixos/)，登录使用[官方文档推荐的 nixpkgs Noctalia Greeter 模块](https://docs.noctalia.dev/greeter/installation/#nixos-declarative-setup)。启用官方推荐的 NetworkManager、Bluetooth、UPower 和电源模式服务，shell 通过 systemd 启动，并按文档启用应用独立 systemd 服务。基础设置由 Home Manager 生成，GUI 修改保存在 `~/.local/state/noctalia/settings.toml`，切回 DMS 不会删除这些偏好。
+
+Noctalia 的 Niri 配置是 `~/.config/niri/noctalia-session.kdl`；`NIRI_CONFIG` 在登录时选择它或 DMS 配置。Noctalia 配置保留 Niri 默认的窗口、工作区、截图、退出快捷键，应用启动、锁屏、音量和亮度接入 Noctalia IPC；另有 `Mod+Space` 启动器、`Mod+S` 控制中心、`Mod+Shift+Comma` 设置、`Mod+Alt+V` 剪贴板、`Alt+Tab` 窗口切换。`Mod+Comma` 和 `Mod+V` 保留 Niri 默认窗口操作。构建时使用 `niri validate` 检查配置。
+
+两个 shell 的 systemd 服务互斥；DMS 插件、激活逻辑、dsearch 和 dcal 只属于 DMS 配置。切换不会重写另一套 shell 的可写配置。两者的壁纸和插件偏好分别保存，不会自动互相转换。
+
+## 终端与输入法
+
+Foot 使用 Fira Code 和 Noto Sans Mono CJK SC、12 pt 字号、12 像素内边距、闪烁细线光标，输入时隐藏鼠标。字体和字号固定，不加入额外同步脚本。
+
+DMS 配置加载 `~/.config/foot/dank-colors.ini`；Noctalia 配置加载 `~/.config/foot/themes/noctalia`。Noctalia 通过官方用户模板接口渲染其随包提供的 Foot 模板，避免主题安装钩子修改 Home Manager 管理的 `foot.ini`。两套配色都会随各自主题更新，新开 Foot 读取新颜色；不承诺现有 Foot 窗口热更新。
+
+Fcitx5 通过 XDG autostart 启动，`Ctrl+Space` 切换英语与雾凇拼音。Rime 使用上游 `rime_ice_suggestion` 配置，用户词库位于 `~/.local/share/fcitx5/rime`，建议单独备份。候选窗的 Material 主题在 classicui 插件配置中声明，托盘使用仓库内的“中”/“A”图标。
+
+## 验证与排错
+
+生成本机硬件文件后：
+
+```sh
+nix flake check "path:$HOME/.nixos"
+```
+
+登录 DMS 后检查 `systemctl --user status dms dsearch dcal`、`dms doctor`；登录 Noctalia 后检查 `systemctl --user status noctalia`、`noctalia config validate`、`niri validate --config ~/.config/niri/noctalia-session.kdl`。登录界面问题用 `journalctl -u greetd -b`，输入法问题用 `fcitx5-diagnose`。
+
+依赖通过 `flake.lock` 固定。Noctalia 与主系统共用 nixpkgs unstable；按官方说明，这种 follows 配置不保证命中 Noctalia Cachix，首次构建可能需要本地编译。虚拟机中是否能正常显示仍需实机验证；不会自动注入软件渲染环境变量掩盖显卡问题。

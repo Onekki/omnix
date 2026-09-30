@@ -1,11 +1,11 @@
-{ userName, dmsPackage, ... }:
+{ userName, ... }:
 {
   imports = [
-    ./dms.nix
-    ./fcitx5.nix
+    ./session.nix
+    ./shell
+    ./input-method
     ./fish.nix
     ./foot.nix
-    ./rime.nix
   ];
 
   home.username = userName;

@@ -1,5 +1,5 @@
 {
-  description = "NixOS desktop: Niri, DMS and Rime";
+  description = "NixOS desktop: Niri, DMS or Noctalia, and Rime";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -33,44 +33,52 @@
       url = "github:AvengeMedia/dms-plugin-registry";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    noctalia = {
+      url = "github:noctalia-dev/noctalia";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { nixpkgs, home-manager, dms, dgop, danksearch, dankcalendar, dms-plugin-registry, ... }:
+    inputs@{ nixpkgs, home-manager, ... }:
     let
       userName = "admin";
       hostName = "nixos";
-      configurationName = "desktop";
       system = "x86_64-linux";
-    in {
-      nixosConfigurations.${configurationName} = nixpkgs.lib.nixosSystem {
-        inherit system;
-        specialArgs = { inherit userName dgop danksearch; };
-        modules = [
-          ./hosts/desktop
-          dms.nixosModules.default
-          dms-plugin-registry.nixosModules.default
-          dankcalendar.nixosModules.default
-          home-manager.nixosModules.home-manager
-          ({ pkgs, config, ... }: {
-            networking.hostName = hostName;
-            users.users.${userName} = {
-              isNormalUser = true;
-              extraGroups = [ "wheel" "networkmanager" "video" "input" ];
-              shell = pkgs.fish;
-            };
-            home-manager = {
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              backupFileExtension = "hm-backup";
-              extraSpecialArgs = {
-                inherit userName configurationName;
-                dmsPackage = config.programs.dank-material-shell.package;
+      mkDesktop = { shell, inputMethod ? "fcitx5" }:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit inputs userName shell inputMethod; };
+          modules = [
+            ./hosts/desktop
+            home-manager.nixosModules.home-manager
+            ({ pkgs, ... }: {
+              networking.hostName = hostName;
+              users.users.${userName} = {
+                isNormalUser = true;
+                extraGroups = [ "wheel" "networkmanager" "video" "input" ];
+                shell = pkgs.fish;
               };
-              users.${userName} = import ./home/nixos;
-            };
-          })
-        ];
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "hm-backup";
+                extraSpecialArgs = {
+                  inherit inputs userName shell inputMethod;
+                  configurationName = "desktop-${shell}";
+                };
+                users.${userName} = import ./home/nixos;
+              };
+            })
+          ];
+        };
+    in {
+      nixosConfigurations = rec {
+        desktop-dms = mkDesktop { shell = "dms"; };
+        desktop-noctalia = mkDesktop { shell = "noctalia"; };
+        # Preserve the original installation/rebuild target.
+        desktop = desktop-dms;
       };
     };
 }

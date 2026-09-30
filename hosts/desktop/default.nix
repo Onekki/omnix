@@ -5,8 +5,8 @@
     ../../modules/nixos/base.nix
     ../../modules/nixos/desktop.nix
     ../../modules/nixos/apps.nix
-    ../../modules/nixos/plugins.nix
-    ../../modules/nixos/input-method.nix
+    ../../modules/nixos/shell
+    ../../modules/nixos/input-method
   ];
 
   system.stateVersion = "26.05";

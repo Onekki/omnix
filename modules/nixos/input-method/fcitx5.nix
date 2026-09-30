@@ -10,7 +10,7 @@
         fcitx5-material-color
         (fcitx5-rime.override { rimeDataPkgs = [ rime-ice ]; })
       ];
-      settings.globalOptions.Interface = {
+      settings.addons.classicui.globalSection = {
         Theme = "Material-Color-deepPurple";
       };
       settings.inputMethod = {

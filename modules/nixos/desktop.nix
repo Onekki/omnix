@@ -1,37 +1,14 @@
-{ pkgs, userName, dgop, danksearch, ... }:
+{ pkgs, ... }:
 {
   hardware.graphics.enable = true;
 
-  services.displayManager = {
-    defaultSession = "niri";
-    dms-greeter = {
-      enable = true;
-      compositor.name = "niri";
-      configHome = "/home/${userName}";
-      logs = {
-        save = true;
-        path = "/var/lib/dms-greeter/greeter.log";
-      };
-    };
-  };
+  services.displayManager.defaultSession = "niri";
   programs.niri.enable = true;
   programs.dconf.enable = true;
-  programs.dank-material-shell = {
-    enable = true;
-    enableDynamicTheming = true;
-    systemd.enable = true;
-  };
-  programs.dsearch = {
-    enable = true;
-    package = danksearch.packages.${pkgs.stdenv.hostPlatform.system}.default;
-    systemd.target = "graphical-session.target";
-  };
-  programs.dank-calendar = {
-    enable = true;
-    systemd.enable = true;
-  };
-
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
+  # Applies to services launched by either shell.
+  systemd.user.settings.Manager.DefaultEnvironment = "PATH=/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin";
 
   services.pipewire = {
     enable = true;
@@ -57,5 +34,5 @@
 
   environment.systemPackages = with pkgs; [
     adw-gtk3
-  ] ++ [ dgop.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+  ];
 }

@@ -3,22 +3,25 @@ set -euo pipefail
 
 source_file=/etc/nixos/hardware-configuration.nix
 profile=desktop
+desktop_shell=dms
 rebuild=true
 interactive=true
 
 usage() {
-  printf 'Usage: %s [--source FILE] [--profile NAME] [--no-rebuild] [--non-interactive]\n' "$0"
+  printf 'Usage: %s [--source FILE] [--profile NAME] [--shell dms|noctalia] [--no-rebuild] [--non-interactive]\n' "$0"
 }
 
 while (($#)); do
   case "$1" in
-    --source|--profile|--host)
+    --source|--profile|--host|--shell)
       if (($# < 2)); then
         usage >&2
         exit 2
       fi
       if [[ "$1" == --source ]]; then
         source_file=$2
+      elif [[ "$1" == --shell ]]; then
+        desktop_shell=$2
       else
         profile=$2
       fi
@@ -59,13 +62,21 @@ if [[ $interactive == true ]]; then
   source_file=${answer:-$source_file}
   read -r -p "Configuration profile [${profile}]: " answer || exit 1
   profile=${answer:-$profile}
+  read -r -p "Desktop shell (dms/noctalia) [${desktop_shell}]: " answer || exit 1
+  desktop_shell=${answer:-$desktop_shell}
 fi
+
+case "$desktop_shell" in
+  dms|noctalia) ;;
+  *) printf 'Unknown desktop shell: %s\n' "$desktop_shell" >&2; exit 2 ;;
+esac
 
 if [[ ! "$profile" =~ ^[A-Za-z0-9][A-Za-z0-9_-]*$ ]]; then
   printf 'Invalid configuration profile: %s\n' "$profile" >&2
   exit 2
 fi
 target_file="${repo_root}/hosts/${profile}/hardware-configuration.nix"
+configuration_name="${profile}-${desktop_shell}"
 
 if [[ ! -f "$source_file" ]]; then
   printf 'Missing hardware configuration: %s\n' "$source_file" >&2
@@ -91,7 +102,7 @@ fi
 if [[ $interactive == true ]]; then
   printf 'Source: %s\nTarget: %s\n' "$source_file" "$target_file"
   if [[ $rebuild == true ]]; then
-    printf 'Then lock: path:%s\nThen rebuild: path:%s#%s\n' "$repo_root" "$repo_root" "$profile"
+    printf 'Then lock: path:%s\nThen rebuild: path:%s#%s\n' "$repo_root" "$repo_root" "$configuration_name"
   else
     printf 'Then skip rebuild (--no-rebuild).\n'
   fi
@@ -109,5 +120,6 @@ if [[ $rebuild == true ]]; then
   NIX_CONFIG='experimental-features = nix-command flakes' nix flake lock "path:${repo_root}"
   substituters='https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirrors.ustc.edu.cn/nix-channels/store https://cache.nixos.org/'
   nix_config=$(printf 'experimental-features = nix-command flakes\nsubstituters = %s\n' "$substituters")
-  sudo env NIX_CONFIG="$nix_config" nixos-rebuild switch --flake "path:${repo_root}#${profile}"
+  sudo env NIX_CONFIG="$nix_config" nixos-rebuild switch --flake "path:${repo_root}#${configuration_name}"
+  printf 'Rebuild complete. Reboot to apply the selected desktop shell and greeter.\n'
 fi
