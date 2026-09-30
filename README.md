@@ -129,7 +129,11 @@ nix flake check "path:$HOME/.nixos"
 
 本机日志显示 Noctalia Greeter 1.6.0 成功初始化 EGL 后，wlroots 0.20.2 报 `Failed to close buffer handle for plane 0: Invalid argument`，随后 Wayland 连接断开。VMSVGA 使用 vmwgfx；它导入的部分 DMA-BUF 是 TTM surface 句柄，通用的 `GEM_CLOSE` 无法释放。这与[上游报告](https://github.com/hyprwm/Hyprland/issues/16175)中的问题吻合。
 
-`shell/noctalia.nix` 仅覆盖 Noctalia Greeter 的 wlroots 依赖，应用 `patches/wlroots-vmwgfx-handles.patch`：只有 `GEM_CLOSE` 返回 `EINVAL` 且驱动确认为 vmwgfx 时，才调用 `DRM_VMW_UNREF_SURFACE`。客户端缓冲区校验和 framebuffer 清理共用这一处理；释放失败仍然报错。该补丁是根据上游提议移植的本地兼容修复，尚未合入 wlroots，不启用软件渲染。首次重建需要编译 wlroots 和 greeter；上游修复后应删除此覆盖。
+`shell/noctalia.nix` 仅覆盖 Noctalia Greeter 的 wlroots 依赖，应用 `patches/wlroots-vmwgfx-handles.patch`：只有 `GEM_CLOSE` 返回 `EINVAL` 且驱动确认为 vmwgfx 时，才调用 `DRM_VMW_UNREF_SURFACE`。客户端缓冲区校验和 framebuffer 清理共用这一处理；释放失败仍然报错。该补丁是根据上游提议移植的本地兼容修复，尚未合入 wlroots；补丁本身不改变渲染后端。首次重建需要编译 wlroots 和 greeter；上游修复后应删除此覆盖。
+
+**当前启用了经确认的软件渲染对照测试。** 句柄补丁应用后，登录界面能够显示，但日志记录 `eglSwapBuffers` 阻塞约 13.5 秒，仍然无法正常操作。为区分硬件渲染与其他原因，`shell/noctalia.nix` 在 greetd 的登录器启动命令中显式设置 `WLR_RENDERER=pixman` 和 `LIBGL_ALWAYS_SOFTWARE=1`，分别用于登录器的合成器和界面；`WLR_LOG=info` 记录所选后端。这些变量只传给登录器进程，不写入全局环境，也不传给登录后的 Niri/Noctalia 桌面。句柄补丁保留，以便对照。
+
+拉取后执行 `nrsn` 并重启，测试密码框输入、登录和 `Ctrl+Alt+F3`。上述日志中应出现 pixman，以及 Mesa 的软件渲染器（通常为 llvmpipe）。这次测试尚不代表卡死已经修复，也不会在一次启动后自动撤销。测试结束后，删除 `shell/noctalia.nix` 中带有 `Temporary` 注释的 `services.greetd.settings.default_session.command` 覆盖，执行 `nrsn` 并重启，即恢复上游的渲染后端选择。
 
 Noctalia 将自身日志写到单独的 syslog 标识，仅筛选 `-u greetd` 可能遗漏关键错误。查看当前启动：
 
@@ -139,4 +143,4 @@ sudo journalctl -b -t noctalia-greeter -t noctalia-greeter-compositor --no-pager
 
 若无法切换 TTY，在 VirtualBox 软键盘中发送 `Ctrl+Alt+F3`。仍无法进入时，重启并按住空格打开 NixOS 启动菜单，选中系统按 `e`，在启动参数末尾临时追加 `systemd.unit=multi-user.target`，回车进入文字登录。此时用 `-b -1` 查看上一次黑屏启动的日志，再拉取修复并执行 `nrsn`，完成后重启。
 
-依赖通过 `flake.lock` 固定。Noctalia 与主系统共用 nixpkgs unstable；按官方说明，这种 follows 配置不保证命中 Noctalia Cachix，首次构建可能需要本地编译。虚拟机中是否能正常显示仍需实机验证；不会自动注入软件渲染环境变量掩盖显卡问题。
+依赖通过 `flake.lock` 固定。Noctalia 与主系统共用 nixpkgs unstable；按官方说明，这种 follows 配置不保证命中 Noctalia Cachix，首次构建可能需要本地编译。虚拟机中是否能正常显示仍需实机验证；软件渲染仅用于上述明确启用的登录器诊断，不进行失败后的自动切换。

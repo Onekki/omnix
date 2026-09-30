@@ -1,4 +1,7 @@
-{ inputs, pkgs, userName, ... }:
+{ config, inputs, lib, pkgs, userName, ... }:
+let
+  greeter = config.services.displayManager.noctalia-greeter;
+in
 {
   imports = [ inputs.noctalia.nixosModules.default ];
 
@@ -13,6 +16,19 @@
       });
     };
   };
+
+  # Temporary, explicitly enabled VirtualBox diagnostic. Remove this command
+  # override to restore the upstream renderer selection after the test.
+  # greetd starts the authenticated desktop separately from this process.
+  services.greetd.settings.default_session.command = lib.escapeShellArgs (
+    [
+      "${pkgs.coreutils}/bin/env"
+      "WLR_RENDERER=pixman"
+      "LIBGL_ALWAYS_SOFTWARE=1"
+      "WLR_LOG=info"
+      (lib.getExe' greeter.package "noctalia-greeter-session")
+    ] ++ greeter.extraArgs
+  );
 
   programs.noctalia = {
     enable = true;
