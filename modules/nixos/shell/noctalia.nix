@@ -18,14 +18,16 @@ in
   };
 
   # Temporary, explicitly enabled VirtualBox diagnostic. Remove this command
-  # override to restore the upstream renderer selection after the test.
+  # override to restore upstream rendering and display submission defaults.
   # greetd starts the authenticated desktop separately from this process.
   services.greetd.settings.default_session.command = lib.escapeShellArgs (
     [
       "${pkgs.coreutils}/bin/env"
       "WLR_RENDERER=pixman"
       "LIBGL_ALWAYS_SOFTWARE=1"
-      "WLR_LOG=info"
+      # Software rendering still stalled in eglSwapBuffers; test legacy KMS.
+      "WLR_DRM_NO_ATOMIC=1"
+      "WLR_LOG=debug"
       (lib.getExe' greeter.package "noctalia-greeter-session")
     ] ++ greeter.extraArgs
   );

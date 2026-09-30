@@ -131,15 +131,19 @@ nix flake check "path:$HOME/.nixos"
 
 `shell/noctalia.nix` 仅覆盖 Noctalia Greeter 的 wlroots 依赖，应用 `patches/wlroots-vmwgfx-handles.patch`：只有 `GEM_CLOSE` 返回 `EINVAL` 且驱动确认为 vmwgfx 时，才调用 `DRM_VMW_UNREF_SURFACE`。客户端缓冲区校验和 framebuffer 清理共用这一处理；释放失败仍然报错。该补丁是根据上游提议移植的本地兼容修复，尚未合入 wlroots；补丁本身不改变渲染后端。首次重建需要编译 wlroots 和 greeter；上游修复后应删除此覆盖。
 
-**当前启用了经确认的软件渲染对照测试。** 句柄补丁应用后，登录界面能够显示，但日志记录 `eglSwapBuffers` 阻塞约 13.5 秒，仍然无法正常操作。为区分硬件渲染与其他原因，`shell/noctalia.nix` 在 greetd 的登录器启动命令中显式设置 `WLR_RENDERER=pixman` 和 `LIBGL_ALWAYS_SOFTWARE=1`，分别用于登录器的合成器和界面；`WLR_LOG=info` 记录所选后端。这些变量只传给登录器进程，不写入全局环境，也不传给登录后的 Niri/Noctalia 桌面。句柄补丁保留，以便对照。
+**当前启用了登录器的传统 DRM 接口对照测试。** 句柄补丁应用后，登录界面能够显示，但 `eglSwapBuffers` 阻塞约 13.5 秒；随后经确认启用的软件渲染测试中，日志已显示 Pixman 和 llvmpipe，提交画面仍阻塞约 59 秒。因此还不能认为问题已经修复，也不能仅归因于 GPU 绘制。
 
-拉取后执行 `nrsn` 并重启，测试密码框输入、登录和 `Ctrl+Alt+F3`。上述日志中应出现 pixman，以及 Mesa 的软件渲染器（通常为 llvmpipe）。这次测试尚不代表卡死已经修复，也不会在一次启动后自动撤销。测试结束后，删除 `shell/noctalia.nix` 中带有 `Temporary` 注释的 `services.greetd.settings.default_session.command` 覆盖，执行 `nrsn` 并重启，即恢复上游的渲染后端选择。
+`shell/noctalia.nix` 保留 `WLR_RENDERER=pixman`、`LIBGL_ALWAYS_SOFTWARE=1` 和句柄补丁，增加 wlroots 官方的 `WLR_DRM_NO_ATOMIC=1`，对照测试传统 DRM/KMS 显示提交接口。`WLR_LOG=debug` 用于确认接口选择。这些变量只传给登录器进程，不写入全局环境，也不传给登录后的 Niri/Noctalia 桌面。
+
+拉取后执行 `nrsn` 并重启，测试密码框输入、登录和 `Ctrl+Alt+F3`。日志应出现 `forcing legacy DRM interface`、pixman 和 llvmpipe。这次测试尚不代表卡死已经修复，也不会在一次启动后自动撤销。测试结束后，删除 `shell/noctalia.nix` 中带有 `Temporary` 注释的 `services.greetd.settings.default_session.command` 覆盖，执行 `nrsn` 并重启，即恢复上游的渲染和显示提交默认设置。
 
 Noctalia 将自身日志写到单独的 syslog 标识，仅筛选 `-u greetd` 可能遗漏关键错误。查看当前启动：
 
 ```sh
 sudo journalctl -b -t noctalia-greeter -t noctalia-greeter-compositor --no-pager -n 150
 ```
+
+对照测试时可在上述命令中添加 `--case-sensitive=no -g 'legacy DRM|atomic|pixman|llvmpipe|eglswap|failed|error'`，避免每帧的 debug 日志淹没后端选择信息。libseat 尝试 seatd 失败后仍可能通过 logind 成功取得会话，不能仅凭 `Backend 'seatd' failed to open seat` 判断需要更改设备权限。
 
 若无法切换 TTY，在 VirtualBox 软键盘中发送 `Ctrl+Alt+F3`。仍无法进入时，重启并按住空格打开 NixOS 启动菜单，选中系统按 `e`，在启动参数末尾临时追加 `systemd.unit=multi-user.target`，回车进入文字登录。此时用 `-b -1` 查看上一次黑屏启动的日志，再拉取修复并执行 `nrsn`，完成后重启。
 
